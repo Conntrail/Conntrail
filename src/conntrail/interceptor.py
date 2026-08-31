@@ -81,11 +81,18 @@ class NodeInterceptor:
 
         On exception from the wrapped call: records an error TraceRecord
         (exported unconditionally, regardless of sample_rate — a failure is
-        already known without further LLM calls) and re-raises.
+        already known without further LLM calls) and re-raises. An async
+        node_fn exceeding config.timeout_seconds is recorded the same way
+        with error_type="timeout" and re-raises asyncio.TimeoutError.
         """
         try:
             if inspect.iscoroutinefunction(self.node_fn):
-                output = await self.node_fn(state)
+                if self.config.timeout_seconds is not None:
+                    output = await asyncio.wait_for(
+                        self.node_fn(state), timeout=self.config.timeout_seconds
+                    )
+                else:
+                    output = await self.node_fn(state)
             else:
                 output = self.node_fn(state)
         except Exception as exc:
@@ -132,7 +139,12 @@ class NodeInterceptor:
         from conntrail.record import TraceRecord
 
         input_text, _ = self._extract_input_text(input_state)
-        error_type = "retry_loop" if isinstance(exc, RetryExhaustedError) else type(exc).__name__
+        if isinstance(exc, RetryExhaustedError):
+            error_type = "retry_loop"
+        elif isinstance(exc, TimeoutError):
+            error_type = "timeout"
+        else:
+            error_type = type(exc).__name__
 
         record = TraceRecord(
             trace_id=TraceRecord.make_id(),

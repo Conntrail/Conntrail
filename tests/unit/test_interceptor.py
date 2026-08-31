@@ -404,3 +404,90 @@ class TestNodeExceptionHandling:
             await interceptor({"message": "hi"})
 
         assert len(exporter.records) == 1
+
+
+# ---------------------------------------------------------------------------
+# NodeInterceptor — timeout wrapping (C1)
+# ---------------------------------------------------------------------------
+
+class TestNodeTimeout:
+    @pytest.mark.asyncio
+    async def test_node_timeout_is_recorded_and_reraised(self):
+        exporter = RecordingExporter()
+
+        async def slow_node(state):
+            await asyncio.sleep(10)
+            return state
+
+        interceptor = NodeInterceptor(
+            slow_node,
+            node_id="slow",
+            config=ConntrailConfig(exporter=exporter, sample_rate=0.0, timeout_seconds=0.05),
+        )
+
+        with pytest.raises(asyncio.TimeoutError):
+            await interceptor({"message": "hi"})
+
+        assert len(exporter.records) == 1
+        record = exporter.records[0]
+        assert record.status == "error"
+        assert record.error_type == "timeout"
+        assert record.stability == "fragile"
+        assert record.entropy_score == 1.0
+
+    @pytest.mark.asyncio
+    async def test_node_timeout_skips_contrast_analysis(self, mocker):
+        exporter = RecordingExporter()
+        analyse_spy = mocker.patch("conntrail.analyser.DivergenceAnalyser.analyse")
+        generate_spy = mocker.patch("conntrail.contrast.ContrastGenerator.generate")
+
+        async def slow_node(state):
+            await asyncio.sleep(10)
+            return state
+
+        interceptor = NodeInterceptor(
+            slow_node,
+            node_id="slow",
+            config=ConntrailConfig(exporter=exporter, sample_rate=1.0, timeout_seconds=0.05),
+        )
+
+        with pytest.raises(asyncio.TimeoutError):
+            await interceptor({"message": "hi"})
+
+        analyse_spy.assert_not_called()
+        generate_spy.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_no_timeout_configured_preserves_existing_behavior(self):
+        """timeout_seconds=None (default) — a slow-ish node still completes normally."""
+        exporter = RecordingExporter()
+
+        async def quick_node(state):
+            await asyncio.sleep(0.01)
+            return {**state, "route": "ok"}
+
+        interceptor = NodeInterceptor(
+            quick_node, node_id="quick", config=ConntrailConfig(exporter=exporter, sample_rate=0.0)
+        )
+
+        output = await interceptor({"message": "hi"})
+        assert output["route"] == "ok"
+        assert exporter.records == []
+
+    @pytest.mark.asyncio
+    async def test_timeout_not_exceeded_behaves_normally(self):
+        exporter = RecordingExporter()
+
+        async def quick_node(state):
+            await asyncio.sleep(0.01)
+            return {**state, "route": "ok"}
+
+        interceptor = NodeInterceptor(
+            quick_node,
+            node_id="quick",
+            config=ConntrailConfig(exporter=exporter, sample_rate=0.0, timeout_seconds=5.0),
+        )
+
+        output = await interceptor({"message": "hi"})
+        assert output["route"] == "ok"
+        assert exporter.records == []

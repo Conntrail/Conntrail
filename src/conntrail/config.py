@@ -27,6 +27,11 @@ class ConntrailConfig:
         entropy_alert_threshold: entropy_score >= this value triggers on_alert.
         on_alert: Optional callback fired when a fragile node is detected.
             Signature: (trace_record: TraceRecord) -> None
+        timeout_seconds: If set, an async node_fn call exceeding this many
+            seconds is cancelled and recorded as an error trace
+            (error_type="timeout"); the original asyncio.TimeoutError still
+            propagates to the caller. None (default) preserves no-timeout
+            behavior. Not enforced for sync node_fn calls.
     """
 
     contrast_model: str = "claude-haiku-4-5-20251001"
@@ -35,6 +40,7 @@ class ConntrailConfig:
     exporter: BaseExporter | None = None
     entropy_alert_threshold: float = 0.6
     on_alert: Callable | None = field(default=None, repr=False)
+    timeout_seconds: float | None = None
 
     def __post_init__(self) -> None:
         if not 0.0 <= self.sample_rate <= 1.0:
