@@ -1,0 +1,50 @@
+# Conntrail — collector + dashboard, composed together.
+#
+# Run from the repo root, once you've copied .env.example to .env:
+#   docker compose -f deploy/docker-compose.yml --env-file .env up --build
+#
+# --env-file is optional — compose vars below default to blank/dev-safe
+# values if you don't have a .env yet, matching the collector's own
+# unauthenticated-with-a-warning dev-mode fallback (see auth.py).
+
+services:
+  collector:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.server
+    environment:
+      COLLECTOR_API_KEY: ${COLLECTOR_API_KEY:-}
+    volumes:
+      - conntrail_data:/data
+    ports:
+      - "${COLLECTOR_HOST_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=3)"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.dashboard
+    environment:
+      COLLECTOR_URL: http://collector:8000
+      COLLECTOR_API_KEY: ${COLLECTOR_API_KEY:-}
+    ports:
+      - "${DASHBOARD_HOST_PORT:-8001}:8000"
+    depends_on:
+      collector:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=3)"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  conntrail_data:

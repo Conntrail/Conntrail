@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ trace.node_id }} — Conntrail{% endblock %}
+{% block content %}
+<p><a href="/">&laquo; Back to trace list</a></p>
+
+<h1>{{ trace.node_id }} <span class="badge badge-{{ trace.stability }}">{{ trace.stability }}</span></h1>
+
+<dl class="trace-meta">
+  <dt>Trace ID</dt><dd><code>{{ trace.trace_id }}</code></dd>
+  <dt>Timestamp</dt><dd>{{ trace.timestamp }}</dd>
+  <dt>Route</dt><dd>{{ trace.original_route }}</dd>
+  <dt>Entropy</dt><dd>{{ "%.3f"|format(trace.entropy_score) }}</dd>
+  <dt>Attribution</dt><dd>{{ trace.attribution_dimension }}</dd>
+  <dt>Counterfactual route</dt><dd>{{ trace.counterfactual_route or "—" }}</dd>
+  <dt>Status</dt><dd>{{ trace.status }}</dd>
+  {% if trace.status == "error" %}
+  <dt>Error type</dt><dd>{{ trace.error_type }}</dd>
+  <dt>Error message</dt><dd>{{ trace.error_message }}</dd>
+  <dt>Failure category</dt><dd>{{ trace.failure_category or "—" }}</dd>
+  {% endif %}
+</dl>
+
+<h2>Summary</h2>
+<p>{{ trace.plain_language_summary }}</p>
+
+<h2>Original input</h2>
+<pre>{{ trace.original_input }}</pre>
+
+<h2>Contrast variants</h2>
+<dl class="trace-meta">
+  <dt>Similar</dt><dd>{{ trace.raw_contrasts.similar }}</dd>
+  <dt>Neutral</dt><dd>{{ trace.raw_contrasts.neutral }}</dd>
+  <dt>Opposite</dt><dd>{{ trace.raw_contrasts.opposite }}</dd>
+</dl>
+
+<h2>Contrast routes</h2>
+<pre>{{ trace.raw_outputs }}</pre>
+{% endblock %}

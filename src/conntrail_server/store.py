@@ -37,6 +37,16 @@ _COLUMNS = (
 
 _JSON_COLUMNS = {"raw_contrasts", "raw_outputs"}
 
+_GEPA_COLUMNS = (
+    "attempt_id",
+    "run_id",
+    "prompt_candidate",
+    "scalar_score",
+    "traces",
+)
+
+_GEPA_JSON_COLUMNS = {"traces"}
+
 
 class TraceStore:
     """Thin repository over sqlite for TraceRecord.to_dict()-shaped payloads."""
@@ -111,5 +121,44 @@ class TraceStore:
     def _row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
         data = dict(row)
         for col in _JSON_COLUMNS:
+            data[col] = json.loads(data[col])
+        return data
+
+    # -- GEPA attempts (G3) --------------------------------------------------
+
+    def insert_gepa_attempt(self, record: dict[str, Any]) -> str:
+        """Upsert a PromptAttemptRecord-shaped payload (+ run_id). Returns attempt_id.
+
+        Upsert, not insert-only: GEPA legitimately re-scores the same attempt
+        (e.g. re-evaluating an accepted candidate against the full valset
+        right after minibatch acceptance) without a fresh begin/end_attempt
+        pair, so the same attempt_id can arrive more than once — a plain
+        INSERT would raise a UNIQUE-constraint error on the second call.
+        """
+        row = {col: record.get(col) for col in _GEPA_COLUMNS}
+        for col in _GEPA_JSON_COLUMNS:
+            row[col] = json.dumps(row[col])
+        cols = ", ".join(_GEPA_COLUMNS)
+        placeholders = ", ".join(f":{c}" for c in _GEPA_COLUMNS)
+        updates = ", ".join(f"{c} = excluded.{c}" for c in _GEPA_COLUMNS if c != "attempt_id")
+        with self._conn:
+            self._conn.execute(
+                f"INSERT INTO gepa_attempts ({cols}) VALUES ({placeholders}) "
+                f"ON CONFLICT(attempt_id) DO UPDATE SET {updates}",
+                row,
+            )
+        return row["attempt_id"]
+
+    def list_gepa_attempts(self, run_id: str) -> list[dict[str, Any]]:
+        """List all attempts for a run, in the order they were inserted."""
+        cur = self._conn.execute(
+            "SELECT * FROM gepa_attempts WHERE run_id = ? ORDER BY rowid ASC", (run_id,)
+        )
+        return [self._gepa_row_to_dict(row) for row in cur.fetchall()]
+
+    @staticmethod
+    def _gepa_row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
+        data = dict(row)
+        for col in _GEPA_JSON_COLUMNS:
             data[col] = json.loads(data[col])
         return data

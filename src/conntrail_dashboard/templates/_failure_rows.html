@@ -1,0 +1,26 @@
+{% if selected_category %}
+<table class="trace-table">
+  <thead>
+    <tr>
+      <th>Node</th>
+      <th>Timestamp</th>
+      <th>Error type</th>
+      <th>Error message</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for t in traces %}
+    <tr>
+      <td><a href="/traces/{{ t.trace_id }}">{{ t.node_id }}</a></td>
+      <td>{{ t.timestamp }}</td>
+      <td>{{ t.error_type or "—" }}</td>
+      <td>{{ t.error_message or "—" }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="empty">No traces in this category.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">Select a category above to see its traces.</p>
+{% endif %}

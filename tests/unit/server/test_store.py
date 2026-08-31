@@ -218,3 +218,66 @@ def test_store_construction_runs_migrations(tmp_path):
         assert store.list() == []
     finally:
         store.close()
+
+
+# ---------------------------------------------------------------------------
+# GEPA attempts (G3)
+# ---------------------------------------------------------------------------
+
+
+def _make_gepa_attempt(*, run_id="run-1", attempt_id="a1", scalar_score=0.5, num_traces=1):
+    return {
+        "run_id": run_id,
+        "attempt_id": attempt_id,
+        "prompt_candidate": "Classify the message.",
+        "scalar_score": scalar_score,
+        "traces": [_make_record() for _ in range(num_traces)],
+    }
+
+
+def test_insert_gepa_attempt_returns_attempt_id(store):
+    payload = _make_gepa_attempt()
+    assert store.insert_gepa_attempt(payload) == "a1"
+
+
+def test_list_gepa_attempts_round_trips(store):
+    payload = _make_gepa_attempt(num_traces=2)
+    store.insert_gepa_attempt(payload)
+
+    results = store.list_gepa_attempts("run-1")
+    assert len(results) == 1
+    assert results[0]["attempt_id"] == "a1"
+    assert results[0]["scalar_score"] == 0.5
+    assert len(results[0]["traces"]) == 2
+    assert results[0]["traces"] == payload["traces"]
+
+
+def test_list_gepa_attempts_filters_by_run_id(store):
+    store.insert_gepa_attempt(_make_gepa_attempt(run_id="run-a", attempt_id="a1"))
+    store.insert_gepa_attempt(_make_gepa_attempt(run_id="run-b", attempt_id="b1"))
+
+    results = store.list_gepa_attempts("run-a")
+    assert [r["attempt_id"] for r in results] == ["a1"]
+
+
+def test_list_gepa_attempts_preserves_insertion_order(store):
+    for i in range(3):
+        store.insert_gepa_attempt(_make_gepa_attempt(run_id="run-1", attempt_id=f"a{i}"))
+    results = store.list_gepa_attempts("run-1")
+    assert [r["attempt_id"] for r in results] == ["a0", "a1", "a2"]
+
+
+def test_list_gepa_attempts_unknown_run_id_returns_empty(store):
+    assert store.list_gepa_attempts("does-not-exist") == []
+
+
+def test_insert_gepa_attempt_is_idempotent_on_reinsert(store):
+    """GEPA can legitimately re-score the same attempt_id (e.g. re-evaluating
+    an accepted candidate against the full valset) — re-inserting must
+    update in place, not raise a UNIQUE-constraint error."""
+    store.insert_gepa_attempt(_make_gepa_attempt(scalar_score=0.0))
+    store.insert_gepa_attempt(_make_gepa_attempt(scalar_score=1.0))  # same attempt_id
+
+    results = store.list_gepa_attempts("run-1")
+    assert len(results) == 1
+    assert results[0]["scalar_score"] == 1.0

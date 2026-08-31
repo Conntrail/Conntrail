@@ -14,7 +14,7 @@ from pathlib import Path
 from fastapi import FastAPI
 
 from conntrail_server.auth import warn_if_auth_disabled
-from conntrail_server.routes import ingest, query
+from conntrail_server.routes import gepa, ingest, query
 from conntrail_server.store import TraceStore
 
 
@@ -32,5 +32,12 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
 
     app.include_router(ingest.router)
     app.include_router(query.router)
+    app.include_router(gepa.router)
+
+    @app.get("/healthz")
+    async def healthz() -> dict[str, str]:
+        # Deliberately outside the auth-gated routers — container/orchestrator
+        # healthchecks shouldn't need a copy of COLLECTOR_API_KEY.
+        return {"status": "ok"}
 
     return app

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Before/After — Conntrail{% endblock %}
+{% block content %}
+<h1>Before / After</h1>
+<p class="subtitle">Compares a CPE-GEPA run's first vs. last recorded attempt — entropy, stability
+mix, and dominant attribution under the original prompt vs. the optimized one.</p>
+
+<form class="filters" method="get" action="/before-after">
+  <input type="text" name="run_id" placeholder="run_id" value="{{ run_id or '' }}" required>
+  <button type="submit">Load run</button>
+</form>
+
+{% if error %}
+<p class="empty">{{ error }}</p>
+{% elif first and last %}
+<p class="subtitle">{{ num_attempts }} attempts recorded for run <code>{{ run_id }}</code>.</p>
+
+<div class="before-after-grid">
+  <div class="attempt-card">
+    <h2>First attempt</h2>
+    <pre class="prompt-preview">{{ first.prompt_candidate }}</pre>
+    <dl class="trace-meta">
+      <dt>Task score</dt><dd>{{ first.scalar_score if first.scalar_score is not none else "—" }}</dd>
+      <dt>Mean entropy</dt><dd>{{ "%.3f"|format(first.mean_entropy) if first.mean_entropy is not none else "—" }}</dd>
+      <dt>Confident</dt><dd>{{ first.confident_count }}</dd>
+      <dt>Boundary</dt><dd>{{ first.boundary_count }}</dd>
+      <dt>Fragile</dt><dd>{{ first.fragile_count }}</dd>
+      <dt>Dominant attribution</dt><dd>{{ first.dominant_attribution or "—" }}</dd>
+    </dl>
+  </div>
+
+  <div class="attempt-card">
+    <h2>Last attempt</h2>
+    <pre class="prompt-preview">{{ last.prompt_candidate }}</pre>
+    <dl class="trace-meta">
+      <dt>Task score</dt><dd>{{ last.scalar_score if last.scalar_score is not none else "—" }}</dd>
+      <dt>Mean entropy</dt><dd>{{ "%.3f"|format(last.mean_entropy) if last.mean_entropy is not none else "—" }}</dd>
+      <dt>Confident</dt><dd>{{ last.confident_count }}</dd>
+      <dt>Boundary</dt><dd>{{ last.boundary_count }}</dd>
+      <dt>Fragile</dt><dd>{{ last.fragile_count }}</dd>
+      <dt>Dominant attribution</dt><dd>{{ last.dominant_attribution or "—" }}</dd>
+    </dl>
+  </div>
+</div>
+
+<h2>Delta (last &minus; first)</h2>
+<dl class="trace-meta">
+  <dt>Task score</dt>
+  <dd>{{ "%+.3f"|format(deltas.scalar_score) if deltas.scalar_score is not none else "—" }}</dd>
+  <dt>Mean entropy</dt>
+  <dd>{{ "%+.3f"|format(deltas.mean_entropy) if deltas.mean_entropy is not none else "—" }}</dd>
+  <dt>Confident count</dt><dd>{{ "%+d"|format(deltas.confident_count) }}</dd>
+  <dt>Boundary count</dt><dd>{{ "%+d"|format(deltas.boundary_count) }}</dd>
+  <dt>Fragile count</dt><dd>{{ "%+d"|format(deltas.fragile_count) }}</dd>
+</dl>
+{% else %}
+<p class="empty">Enter a run_id above — copy it from run_live.py's "Persisting attempts to ..." log line or run summary JSON.</p>
+{% endif %}
+{% endblock %}

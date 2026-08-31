@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Failures — Conntrail{% endblock %}
+{% block content %}
+<h1>Failures</h1>
+
+<div class="failure-tiles">
+  {% for c in failure_categories %}
+  <a
+    class="tile {% if selected_category == c %}selected{% endif %}"
+    href="/failures?failure_category={{ c }}"
+    hx-get="/failures?failure_category={{ c }}"
+    hx-target="#failure-rows"
+    hx-push-url="true"
+  >
+    <span class="tile-count">{{ counts.get(c, 0) }}{% if counts.get(c, 0) >= count_sample_limit %}+{% endif %}</span>
+    <span class="tile-label">{{ c }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+<div id="failure-rows">
+  {% include "_failure_rows.html" %}
+</div>
+{% endblock %}

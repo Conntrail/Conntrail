@@ -90,3 +90,16 @@ def test_set_key_emits_no_startup_warning(tmp_path, monkeypatch, caplog):
     with caplog.at_level(logging.WARNING, logger="conntrail_server"):
         create_app(tmp_path / "traces.sqlite3")
     assert not any("COLLECTOR_API_KEY" in record.message for record in caplog.records)
+
+
+# ---------------------------------------------------------------------------
+# /healthz — always unauthenticated (O3's compose healthcheck needs this)
+# ---------------------------------------------------------------------------
+
+
+def test_healthz_does_not_require_key_when_set(tmp_path, monkeypatch):
+    monkeypatch.setenv("COLLECTOR_API_KEY", "secret-123")
+    with _make_client(tmp_path) as client:
+        resp = client.get("/healthz")
+        assert resp.status_code == 200
+        assert resp.json() == {"status": "ok"}

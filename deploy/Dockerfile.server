@@ -1,0 +1,45 @@
+# Conntrail collector — builds conntrail[server], runs it via uvicorn.
+# Build from the repo root: docker build -f deploy/Dockerfile.server -t conntrail-server .
+
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+
+# build-essential covers any transitive dependency that needs to compile a
+# C extension (e.g. pydantic-core has no manylinux wheel for some arches).
+# Kept out of the runtime stage.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY pyproject.toml ./
+COPY src ./src
+
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir ".[server]"
+
+
+FROM python:3.11-slim AS runtime
+
+RUN useradd --create-home --uid 1000 conntrail \
+    && mkdir -p /data \
+    && chown conntrail:conntrail /data
+
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /app
+USER conntrail
+
+# The sqlite file lives on a mounted volume, never baked into the image —
+# `docker run -v conntrail_data:/data ...` (or a compose volume) is what
+# makes it persist across container restarts/recreates.
+VOLUME ["/data"]
+ENV COLLECTOR_DB_PATH=/data/conntrail_traces.sqlite3
+
+EXPOSE 8000
+
+CMD ["uvicorn", "conntrail_server.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]

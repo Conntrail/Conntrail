@@ -1,0 +1,36 @@
+# Conntrail dashboard — builds conntrail[dashboard], runs it via uvicorn.
+# Configured entirely via env vars at runtime (COLLECTOR_URL, COLLECTOR_API_KEY) —
+# nothing collector-specific is baked into the image.
+# Build from the repo root: docker build -f deploy/Dockerfile.dashboard -t conntrail-dashboard .
+
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY pyproject.toml ./
+COPY src ./src
+
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir ".[dashboard]"
+
+
+FROM python:3.11-slim AS runtime
+
+RUN useradd --create-home --uid 1000 conntrail
+
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /app
+USER conntrail
+
+EXPOSE 8000
+
+CMD ["uvicorn", "conntrail_dashboard.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]

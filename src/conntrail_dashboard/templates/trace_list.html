@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Trace Explorer — Conntrail{% endblock %}
+{% block content %}
+<h1>Trace Explorer</h1>
+
+<form
+  class="filters"
+  hx-get="/"
+  hx-target="#trace-rows"
+  hx-push-url="true"
+  hx-trigger="change, submit"
+>
+  <input type="text" name="node_id" placeholder="node_id" value="{{ filters.node_id or '' }}">
+  <select name="stability">
+    <option value="">any stability</option>
+    {% for s in stabilities %}
+    <option value="{{ s }}" {% if filters.stability == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <select name="failure_category">
+    <option value="">any failure_category</option>
+    {% for c in failure_categories %}
+    <option value="{{ c }}" {% if filters.failure_category == c %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+  </select>
+  <input type="text" name="since" placeholder="since (ISO 8601)" value="{{ filters.since or '' }}">
+  <input type="text" name="until" placeholder="until (ISO 8601)" value="{{ filters.until or '' }}">
+  <button type="submit">Filter</button>
+</form>
+
+<div id="trace-rows">
+  {% include "_trace_rows.html" %}
+</div>
+{% endblock %}

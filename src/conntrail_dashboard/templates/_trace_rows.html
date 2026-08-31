@@ -1,0 +1,46 @@
+<table class="trace-table">
+  <thead>
+    <tr>
+      <th>Node</th>
+      <th>Timestamp</th>
+      <th>Route</th>
+      <th>Stability</th>
+      <th>Entropy</th>
+      <th>Status</th>
+      <th>Failure</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for t in traces %}
+    <tr class="status-{{ t.status }}">
+      <td><a href="/traces/{{ t.trace_id }}">{{ t.node_id }}</a></td>
+      <td>{{ t.timestamp }}</td>
+      <td>{{ t.original_route }}</td>
+      <td><span class="badge badge-{{ t.stability }}">{{ t.stability }}</span></td>
+      <td>{{ "%.2f"|format(t.entropy_score) }}</td>
+      <td>{{ t.status }}</td>
+      <td>{{ t.failure_category or "—" }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7" class="empty">No traces match the current filters.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="pagination">
+  {% set prev_offset = offset - limit %}
+  {% if prev_offset >= 0 %}
+  <button
+    hx-get="/?{{ filters_qs }}{% if filters_qs %}&{% endif %}limit={{ limit }}&offset={{ prev_offset }}"
+    hx-target="#trace-rows"
+    hx-push-url="true"
+  >&laquo; Prev</button>
+  {% endif %}
+  {% if traces|length == limit %}
+  <button
+    hx-get="/?{{ filters_qs }}{% if filters_qs %}&{% endif %}limit={{ limit }}&offset={{ offset + limit }}"
+    hx-target="#trace-rows"
+    hx-push-url="true"
+  >Next &raquo;</button>
+  {% endif %}
+</div>
