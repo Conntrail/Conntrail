@@ -28,8 +28,17 @@ real incompatibilities turned up):
    and mutated correctly per candidate.
 
 Usage:
+    # Against a real Anthropic API (the original G2 scope):
     export ANTHROPIC_API_KEY=...
     python examples/gepa/run_live.py --max-metric-calls 8
+
+    # Against a local OpenAI-compatible server (Unsloth Studio, Ollama,
+    # llama.cpp, vLLM) — same "local/<name>" convention as providers.py,
+    # LOCAL_* env vars for URL/auth:
+    python examples/gepa/run_live.py \
+        --student-model local/unsloth/gemma-4-12b-it-GGUF \
+        --reflection-model local/unsloth/gemma-4-12b-it-GGUF \
+        --max-metric-calls 8
 
 Not library code — a runnable example living outside the installable
 packages, per EPICS.md Phase 5.
@@ -63,16 +72,41 @@ logger = logging.getLogger("conntrail.examples.gepa")
 
 DEFAULT_STUDENT_MODEL = "claude-haiku-4-5-20251001"  # matches ConntrailConfig's own default
 DEFAULT_REFLECTION_MODEL = "claude-opus-5"
+# Reflection on a small local model can't spare 4000 tokens of budget —
+# keep prompts/answers short instead.
+_LOCAL_REFLECTION_MAX_TOKENS = 1500
 
 
-def _require_api_key() -> str:
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise RuntimeError(
-            "ANTHROPIC_API_KEY is required for a live CPE-GEPA run. "
-            "Set it in the environment (or .env) before running this script."
+def _is_local(model: str) -> bool:
+    return model == "local" or model.startswith("local/")
+
+
+def make_lm(model: str, *, api_key: str | None, max_tokens: int) -> dspy.LM:
+    """Build a dspy.LM from a model string.
+
+    "local/<name>" routes to the local OpenAI-compatible server at
+    LOCAL_LLM_URL (auth per LOCAL_AUTH_MODE — JWT for Unsloth Studio), with
+    chain-of-thought disabled in JWT mode so small max_tokens budgets aren't
+    consumed by reasoning. Anything else is an Anthropic model name, per the
+    original G2 scope.
+    """
+    if _is_local(model):
+        from conntrail.utils.providers import _resolve_local_api_key, local_chat_kwargs
+
+        name = model.split("/", 1)[1] if "/" in model else os.environ.get(
+            "LOCAL_MODEL_NAME", "local-model"
         )
-    return api_key
+        return dspy.LM(
+            f"openai/{name}",
+            api_base=os.environ.get("LOCAL_LLM_URL", "http://127.0.0.1:8888/v1"),
+            api_key=_resolve_local_api_key(),
+            max_tokens=max_tokens,
+            temperature=0.0,
+            **local_chat_kwargs(),
+        )
+    if not api_key:
+        raise RuntimeError(f"ANTHROPIC_API_KEY is required for non-local model {model!r}.")
+    return dspy.LM(f"anthropic/{model}", api_key=api_key, max_tokens=max_tokens)
 
 
 def make_traced_router_class(collector: TraceCollector, config: ConntrailConfig) -> type[dspy.Module]:
@@ -161,7 +195,7 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=8,
         help="Total GEPA metric-call budget (small on purpose — this is a "
-        "correctness run, not a full optimization). Default: 8.",
+             "correctness run, not a full optimization). Default: 8.",
     )
     parser.add_argument(
         "--num-examples",
@@ -169,8 +203,26 @@ def parse_args() -> argparse.Namespace:
         default=6,
         help=f"How many trainset examples to use (out of {len(TRAINSET)} available). Default: 6.",
     )
-    parser.add_argument("--student-model", default=DEFAULT_STUDENT_MODEL)
-    parser.add_argument("--reflection-model", default=DEFAULT_REFLECTION_MODEL)
+    parser.add_argument(
+        "--student-model",
+        default=os.environ.get("CONNTRAIL_GEPA_STUDENT_MODEL", DEFAULT_STUDENT_MODEL),
+        help="Student LM. Cloud model name (Anthropic) or 'local/<name>' for the "
+             "local server. Defaults to CONNTRAIL_GEPA_STUDENT_MODEL, then "
+             f"{DEFAULT_STUDENT_MODEL}.",
+    )
+    parser.add_argument(
+        "--reflection-model",
+        default=os.environ.get("CONNTRAIL_GEPA_REFLECTION_MODEL", DEFAULT_REFLECTION_MODEL),
+        help="Reflection LM, same conventions as --student-model. Defaults to "
+             f"CONNTRAIL_GEPA_REFLECTION_MODEL, then {DEFAULT_REFLECTION_MODEL}.",
+    )
+    parser.add_argument(
+        "--contrast-model",
+        default=os.environ.get("CONNTRAIL_CONTRAST_MODEL", "claude-haiku-4-5-20251001"),
+        help="Contrast-generation model used by the tracing itself (never the "
+             "student model). Same conventions as --student-model. Defaults to "
+             "CONNTRAIL_CONTRAST_MODEL, then the SDK default.",
+    )
     parser.add_argument(
         "--output",
         type=Path,
@@ -194,11 +246,36 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
+    # Load repo-root .env (if present) so LOCAL_*/CONNTRAIL_* conventions work
+    # without exporting them first — same behavior as the test suite's conftest.
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv(Path(__file__).parent.parent.parent / ".env")
+    except ImportError:
+        pass
     args = parse_args()
-    api_key = _require_api_key()
+
+    # ANTHROPIC_API_KEY is only required when either LM is a cloud model;
+    # "local/..." models authenticate against the local server instead.
+    api_key: str | None = None
+    if not (_is_local(args.student_model) and _is_local(args.reflection_model)):
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "ANTHROPIC_API_KEY is required for a live CPE-GEPA run with cloud "
+                "models. Set it in the environment (or .env), or pass "
+                "--student-model/--reflection-model local/<name> to run against "
+                "the local server instead."
+            )
+
+    student_max_tokens = 100 if _is_local(args.student_model) else 20
+    reflection_max_tokens = (
+        _LOCAL_REFLECTION_MAX_TOKENS if _is_local(args.reflection_model) else 4000
+    )
 
     dspy.settings.configure(
-        lm=dspy.LM(f"anthropic/{args.student_model}", api_key=api_key, max_tokens=20)
+        lm=make_lm(args.student_model, api_key=api_key, max_tokens=student_max_tokens)
     )
 
     trainset = TRAINSET[: args.num_examples]
@@ -224,6 +301,7 @@ def main() -> None:
         trainset=trainset,
         task_metric_fn=make_task_metric_fn(),
         base_conntrail_config=ConntrailConfig(
+            contrast_model=args.contrast_model,
             sample_rate=1.0,
             entropy_alert_threshold=0.0,
             async_mode=False,
@@ -231,8 +309,8 @@ def main() -> None:
         on_attempt_scored=on_attempt_scored,
         gepa_kwargs={
             "max_metric_calls": args.max_metric_calls,
-            "reflection_lm": dspy.LM(
-                f"anthropic/{args.reflection_model}", api_key=api_key, max_tokens=4000
+            "reflection_lm": make_lm(
+                args.reflection_model, api_key=api_key, max_tokens=reflection_max_tokens
             ),
             # TraceCollector's begin/end-attempt lifecycle assumes one attempt
             # in flight at a time (see module docstring) — GEPA's default

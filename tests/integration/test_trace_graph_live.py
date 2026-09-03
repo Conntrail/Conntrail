@@ -5,11 +5,10 @@ Fixed from the old repo's mismarking — this genuinely calls a live LLM
 (via ContrastGenerator's contrast-generation pipeline) and is marked
 @pytest.mark.integration from the start.
 """
-import os
-
 import pytest
 
 from conntrail import ConntrailConfig, trace_graph
+from tests.conftest import default_contrast_model, live_llm_available
 from tests.fixtures.sample_graphs import build_simple_router
 
 
@@ -17,8 +16,8 @@ from tests.fixtures.sample_graphs import build_simple_router
 class TestTraceGraphLive:
     @pytest.fixture(autouse=True)
     def require_api_key(self):
-        if not any(os.getenv(k) for k in ("GROQ_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY")):
-            pytest.skip("No API key available")
+        if not live_llm_available():
+            pytest.skip("No live LLM available (cloud key or local server)")
 
     @pytest.mark.asyncio
     async def test_trace_graph_does_not_alter_graph_output(self):
@@ -30,7 +29,12 @@ class TestTraceGraphLive:
         result_before = await g1.ainvoke(state)
 
         g2 = build_simple_router()
-        trace_graph(g2, config=ConntrailConfig(sample_rate=1.0, async_mode=True))
+        trace_graph(
+            g2,
+            config=ConntrailConfig(
+                sample_rate=1.0, async_mode=True, contrast_model=default_contrast_model()
+            ),
+        )
         result_after = await g2.ainvoke(state)
 
         assert result_before["route"] == result_after["route"]

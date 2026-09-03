@@ -88,6 +88,20 @@ def _resolve_local_api_key() -> str:
     return "not-needed"
 
 
+def local_chat_kwargs() -> dict:
+    """Extra kwargs an OpenAI-compatible client needs for the local server.
+
+    Re-exports the per-mode decisions _build_model() makes for LangChain
+    (JWT mode ⇒ Unsloth Studio ⇒ disable chain-of-thought so small
+    max_tokens budgets aren't consumed by reasoning), so non-LangChain
+    consumers (e.g. dspy.LM in examples/gepa) can build an equivalent
+    client against the same server.
+    """
+    if _LOCAL_AUTH_MODE == "jwt":
+        return {"extra_body": {"enable_thinking": False}}
+    return {}
+
+
 # Model name prefixes → provider
 _PREFIX_MAP = {
     "llama": "groq",

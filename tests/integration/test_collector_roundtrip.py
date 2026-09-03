@@ -18,6 +18,7 @@ import pytest
 
 from conntrail import ConntrailConfig, trace_node
 from conntrail.exporters.http import HttpExporter
+from tests.conftest import default_contrast_model, live_llm_available
 
 _API_KEY = "test-collector-key"
 
@@ -46,8 +47,8 @@ def _wait_until_ready(base_url: str, api_key: str, timeout: float = 10.0) -> Non
 class TestCollectorRoundtrip:
     @pytest.fixture(autouse=True)
     def require_api_key(self):
-        if not any(os.getenv(k) for k in ("GROQ_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY")):
-            pytest.skip("No API key available")
+        if not live_llm_available():
+            pytest.skip("No live LLM available (cloud key or local server)")
 
     @pytest.fixture
     def collector(self, tmp_path):
@@ -101,11 +102,19 @@ class TestCollectorRoundtrip:
         assert traces, f"no traces found for node_id={node_id!r}"
         return traces[0]
 
+    def _make_config(self, base_url: str) -> ConntrailConfig:
+        exporter = HttpExporter(collector_url=base_url, api_key=_API_KEY)
+        return ConntrailConfig(
+            exporter=exporter,
+            sample_rate=1.0,
+            async_mode=False,
+            contrast_model=default_contrast_model(),
+        )
+
     @pytest.mark.asyncio
     async def test_happy_path_trace_is_queryable_via_collector(self, collector):
         base_url = collector
-        exporter = HttpExporter(collector_url=base_url, api_key=_API_KEY)
-        config = ConntrailConfig(exporter=exporter, sample_rate=1.0, async_mode=False)
+        config = self._make_config(base_url)
 
         @trace_node(config=config)
         async def roundtrip_router(state):
@@ -126,13 +135,12 @@ class TestCollectorRoundtrip:
         assert 0.0 <= detail["entropy_score"] <= 1.0
         assert detail["stability"] in ("confident", "boundary", "fragile")
 
-        await exporter.close()
+        await config.exporter.close()
 
     @pytest.mark.asyncio
     async def test_error_path_trace_round_trips_with_error_status(self, collector):
         base_url = collector
-        exporter = HttpExporter(collector_url=base_url, api_key=_API_KEY)
-        config = ConntrailConfig(exporter=exporter, sample_rate=1.0, async_mode=False)
+        config = self._make_config(base_url)
 
         @trace_node(config=config)
         async def roundtrip_failing_router(state):
@@ -148,7 +156,7 @@ class TestCollectorRoundtrip:
         assert detail["error_type"] == "ValueError"
         assert detail["error_message"] == "simulated node failure"
 
-        await exporter.close()
+        await config.exporter.close()
 
     async def _fetch_detail(self, base_url: str, trace_id: str) -> dict:
         async with httpx.AsyncClient() as client:
