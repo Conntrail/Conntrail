@@ -68,3 +68,12 @@ class CollectorClient:
             return None
         response.raise_for_status()
         return response.json()
+
+    async def get_cost_summary(self) -> dict[str, Any]:
+        """GET /v1/cost-summary — per-node aggregated cost telemetry."""
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.get(
+                f"{self.base_url}/v1/cost-summary", headers=self._headers()
+            )
+        response.raise_for_status()
+        return response.json()

@@ -11,9 +11,13 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
+
+if TYPE_CHECKING:
+    from conntrail.cost import TokenUsage
 
 _PROMPT_PATH = Path(__file__).parent / "prompts" / "contrast_gen.txt"
 
@@ -60,6 +64,9 @@ class ContrastGenerator:
     ) -> None:
         self.model = model
         self._llm = llm  # pre-configured model, or None to lazy-build from model string
+        # Cost telemetry from the last generate() call (None until then).
+        self.last_usage: TokenUsage | None = None
+        self.last_model: str = ""
 
     async def generate(self, input_text: str) -> ContrastSet:
         """
@@ -85,6 +92,12 @@ class ContrastGenerator:
             response = await llm.ainvoke([HumanMessage(content=prompt)])
         except Exception as e:
             raise ContrastGenerationError(f"LLM call failed: {e}") from e
+
+        # Capture the contrast call's own cost (previously discarded unread).
+        from conntrail.cost import model_name_from_message, usage_from_message
+
+        self.last_usage = usage_from_message(response)
+        self.last_model = model_name_from_message(response) or self.model
 
         return self._parse_response(response.content)
 

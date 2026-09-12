@@ -98,9 +98,10 @@ uvicorn conntrail_server.app:create_app --factory --port 8000
 
 Endpoints: `POST /v1/traces` (ingest), `GET /v1/traces` (filter by `node_id`,
 `stability`, `status`, `failure_category`, `since`/`until`, paginated),
-`GET /v1/traces/{id}` (full record), `GET /healthz`. Leaving
-`COLLECTOR_API_KEY` unset runs unauthenticated with a loud startup warning —
-dev convenience only.
+`GET /v1/traces/{id}` (full record), `GET /v1/cost-summary` (per-node token /
+cost / cache-hit aggregates + cross-node shared instruction blocks),
+`GET /healthz`. Leaving `COLLECTOR_API_KEY` unset runs unauthenticated with a
+loud startup warning — dev convenience only.
 
 ### 3. Run the dashboard
 
@@ -111,8 +112,10 @@ uvicorn conntrail_dashboard.app:create_app --factory --port 8001
 ```
 
 Pages: trace list (filterable, HTMX partial swaps), per-trace detail
-(contrasts, entropy, attribution, counterfactual), failure view (grouped by
-category), and a before/after CPE-GEPA panel.
+(contrasts, entropy, attribution, counterfactual, cost telemetry + findings),
+failure view (grouped by category), a per-node **cost view** (tokens, cache
+hit ratio, estimated cost, shared instruction blocks), and a before/after
+CPE-GEPA panel (now with token/cost deltas).
 
 ### 4. Or just docker compose it
 
@@ -137,13 +140,66 @@ produces — no invented categories:
 | `malformed_output` | `status="ok"` but no route signal found in the output (`original_route == "unknown"`) |
 | `none` | a normal, resolved-route success |
 
+## Cost telemetry
+
+Alongside stability, every trace records what the node *cost* (on by default,
+`capture_cost=True`): wall-clock latency, the node's internal LLM token usage
+observed via a LangChain callback handler (input/output/**cache-read**/cache-
+write tokens, per model — best-effort: it sees calls made through LangChain
+clients, so non-LangChain nodes report no usage), and **Conntrail's own
+analysis overhead** (the 4 re-runs + contrast call — the observer's bill is
+measured too, so `sample_rate` can be tuned from data).
+
+`cost_usd` figures come from a built-in price table (longest-prefix match,
+`local/*` = free, `CONNTRAIL_PRICE_OVERRIDES` env or
+`ConntrailConfig.model_prices` for corrections — prices drift, treat every
+figure as an estimate).
+
+Each trace also carries derived **cost findings** (same
+derived-not-invented philosophy as the failure classifier):
+
+| Dimension | Answers |
+|---|---|
+| `cache_efficiency` | is the right stuff being cached? (hit rate, wasted cache writes, missing `cache_control` on Anthropic, sub-threshold prompts) |
+| `prompt_size` | are prompts unnecessarily large? (per-call token anomalies, static-instruction dominance) |
+| `repeated_instructions` | are identical instruction blocks re-sent across the node's calls without being cache-served? |
+| `output_discipline` | are output tokens held to a standard? (verbose free-form output for label-like routes, `malformed_output`/`retry_loop` wasted-token accounting) |
+| `observer_overhead` | what Conntrail's own analysis cost for this trace |
+
+Findings recommend, never mutate — research shows naive compression can
+crater accuracy (LLMLingua-2 destroys tool schemas; documented cases of 32% →
+8% accuracy at 50% token reduction), so the human — or the GEPA reflection
+LM — decides what to act on.
+
+The collector aggregates all of this at `GET /v1/cost-summary`, and the
+dashboard's **Cost** page shows per-node tokens / cache hit ratio / cost /
+latency / warnings, plus **shared instruction blocks across nodes** (the same
+instruction fingerprint sent by multiple nodes — the shared cached-prefix
+candidate). Trace detail pages show per-trace usage, overhead, and findings.
+
+### Cost in the CPE-GEPA loop
+
+The optimizer scores cost alongside stability and task accuracy:
+
+- `score = task_score − cost_weight × (tokens / baseline_tokens − 1)` — the
+  seed prompt pays no penalty, cheaper candidates are rewarded. Default
+  `cost_weight=0.1` (`--cost-weight 0` disables). The attempt's
+  `scalar_score` stays the *raw* task score for honest reporting.
+- `objective_scores={"cost": −tokens}` is also emitted for gepa's native
+  per-objective Pareto tracking.
+- The feedback text (the only channel the reflection LM reads) reports the
+  candidate's tokens/cost and standing cost guidance — concise instructions,
+  byte-stable prefixes for caching, schema-constrained outputs. Approach
+  validated by CROP (arXiv:2604.14214).
+
 ## LLM providers
 
 Contrast generation (and the GEPA student/reflection LMs) resolve through
 `conntrail.utils.providers.get_chat_model()` — provider inferred from the
-model-name prefix (`claude-*`, `gpt-*`, `llama-*`/Groq, …), falling back to
-the first available API key. Cloud keys: `GROQ_API_KEY`, `ANTHROPIC_API_KEY`,
-`OPENAI_API_KEY`, `OPENROUTER_API_KEY`.
+model-name prefix (`claude-*`, `gpt-*`, `gemini-*`, `llama-*`/Groq, …),
+falling back to the first available API key. Cloud keys: `GROQ_API_KEY`,
+`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY` (or `GEMINI_API_KEY`),
+`OPENROUTER_API_KEY`.
 
 **Local servers** (Unsloth Studio, Ollama, llama.cpp, vLLM — anything
 OpenAI-compatible): pass `model="local/<name>"` and configure via env:
@@ -155,9 +211,14 @@ LOCAL_AUTH_MODE=none | api_key | jwt     # jwt = Unsloth Studio username/passwor
 LOCAL_USERNAME=...  LOCAL_PASSWORD=...
 ```
 
-In JWT mode the token is re-exchanged on every call (a server restart never
-produces stale-401 failures) and chain-of-thought is disabled so small token
-budgets aren't consumed by reasoning. See `.env.example` for every variable.
+Cost telemetry works across all of these: Anthropic/Gemini/Groq report token
+usage natively; OpenAI, OpenRouter, and the OpenAI-compatible local servers
+(Unsloth, Ollama `/v1`, llama.cpp, vLLM) get `stream_usage=True` requested
+explicitly, since langchain-openai only auto-enables usage reporting for the
+default api.openai.com base URL. In JWT mode the token is re-exchanged on
+every call (a server restart never produces stale-401 failures) and
+chain-of-thought is disabled so small token budgets aren't consumed by
+reasoning. See `.env.example` for every variable.
 
 ## CPE-GEPA (prompt optimization from traces)
 
@@ -192,8 +253,8 @@ verified results.
 ## Repo layout
 
 ```
-src/conntrail/            SDK: interceptor, analyser, contrast, record, wrap, exporters, gepa/
-src/conntrail_server/     collector: routes (ingest/query/gepa), store, classifier, auth, migrations/
+src/conntrail/            SDK: interceptor, analyser, contrast, record, wrap, cost, cost_analyzer, exporters, gepa/
+src/conntrail_server/     collector: routes (ingest/query/gepa/cost), store, classifier, auth, migrations/
 src/conntrail_dashboard/  dashboard: routes, client, templates/, static/
 examples/gepa/            G1 student module + trainset + live GEPA run script
 deploy/                   Dockerfile.server, Dockerfile.dashboard, docker-compose.yml

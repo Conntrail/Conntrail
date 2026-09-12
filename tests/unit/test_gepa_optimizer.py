@@ -157,3 +157,19 @@ def test_attempt_records_reflects_collector():
     assert records[0].prompt_candidate == "p1"
     assert records[0].scalar_score == 0.7
     assert records[0].fragile_count == 1
+
+
+# --- cost_weight threading ---
+
+def test_cost_weight_default_and_threaded_to_feedback_fn():
+    opt = _make_optimizer()
+    assert opt.cost_weight == 0.1
+    assert opt.feedback_fn._cost_weight == 0.1
+
+    opt = _make_optimizer(cost_weight=0.25)
+    assert opt.feedback_fn._cost_weight == 0.25
+
+
+def test_negative_cost_weight_raises():
+    with pytest.raises(ValueError, match="cost_weight"):
+        _make_optimizer(cost_weight=-1.0)

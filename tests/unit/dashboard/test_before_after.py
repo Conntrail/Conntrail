@@ -50,13 +50,24 @@ def _trace(entropy: float, stability: str, attribution: str) -> dict[str, Any]:
     }
 
 
-def _attempt(attempt_id: str, prompt: str, scalar_score: float | None, traces: list) -> dict:
+def _attempt(
+    attempt_id: str,
+    prompt: str,
+    scalar_score: float | None,
+    traces: list,
+    token_usage: dict | None = None,
+    cost_usd: float | None = None,
+    latency_ms: float | None = None,
+) -> dict:
     return {
         "run_id": "run-1",
         "attempt_id": attempt_id,
         "prompt_candidate": prompt,
         "scalar_score": scalar_score,
         "traces": traces,
+        "token_usage": token_usage,
+        "cost_usd": cost_usd,
+        "latency_ms": latency_ms,
     }
 
 
@@ -172,3 +183,53 @@ def test_missing_run_id_query_param_treated_as_no_run_id(client_with):
     client, _ = client_with()
     resp = client.get("/before-after")
     assert resp.status_code == 200
+
+
+def test_attempt_cost_totals_and_deltas(client_with):
+    first = _attempt(
+        "a0", "Original prompt.", 0.25, [_trace(0.9, "fragile", "semantic intensity")],
+        token_usage={"input_tokens": 1000, "output_tokens": 100}, cost_usd=0.010,
+    )
+    last = _attempt(
+        "a1", "Optimized prompt.", 0.9, [_trace(0.1, "confident", "urgency/sentiment")],
+        token_usage={"input_tokens": 600, "output_tokens": 60}, cost_usd=0.006,
+    )
+    run = {"run_id": "run-1", "attempts": [first, last]}
+    client, _ = client_with({"run-1": run})
+
+    from conntrail_dashboard.routes import _attempt_summary, _delta
+
+    first_summary = _attempt_summary(first)
+    assert first_summary["total_input_tokens"] == 1000
+    assert first_summary["total_output_tokens"] == 100
+    assert first_summary["total_cost_usd"] == 0.010
+
+    last_summary = _attempt_summary(last)
+    assert last_summary["total_input_tokens"] == 600
+    assert _delta(last_summary, first_summary, "total_cost_usd") == pytest.approx(-0.004)
+
+    resp = client.get("/before-after", params={"run_id": "run-1"})
+    body = resp.text
+    assert "1000 / 100" in body
+    assert "600 / 60" in body
+    assert "-0.004000" in body  # cost delta, %+.6f
+
+
+def test_attempt_cost_falls_back_to_embedded_traces(client_with):
+    rich_trace = dict(
+        _trace(0.2, "confident", "urgency/sentiment"),
+        token_usage={"input_tokens": 300, "output_tokens": 30},
+        cost_usd=0.003,
+        latency_ms=80.0,
+    )
+    attempt = _attempt("a0", "Prompt.", 0.5, [rich_trace])
+    run = {"run_id": "run-1", "attempts": [attempt]}
+    client, _ = client_with({"run-1": run})
+
+    from conntrail_dashboard.routes import _attempt_summary
+
+    summary = _attempt_summary(attempt)
+    assert summary["total_input_tokens"] == 300
+    assert summary["total_output_tokens"] == 30
+    assert summary["total_cost_usd"] == pytest.approx(0.003)
+    assert summary["mean_latency_ms"] == 80.0

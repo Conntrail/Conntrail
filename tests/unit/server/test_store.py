@@ -71,14 +71,31 @@ def test_insert_then_get_round_trips_exact_payload(store):
     fetched = store.get(payload["trace_id"])
     # failure_category is a store-level column populated by the ingest layer
     # (C2), not part of TraceRecord.to_dict()'s wire shape — absent here.
-    assert fetched == {**payload, "failure_category": None}
+    # Cost columns are nullable and default to None in the round trip.
+    assert fetched == {
+        **payload,
+        "failure_category": None,
+        "token_usage": None,
+        "cost_usd": None,
+        "latency_ms": None,
+        "analysis_overhead": None,
+        "cost_findings": None,
+    }
 
 
 def test_insert_then_get_round_trips_error_record(store):
     payload = _make_record(status="error")
     store.insert(payload)
     fetched = store.get(payload["trace_id"])
-    assert fetched == {**payload, "failure_category": None}
+    assert fetched == {
+        **payload,
+        "failure_category": None,
+        "token_usage": None,
+        "cost_usd": None,
+        "latency_ms": None,
+        "analysis_overhead": None,
+        "cost_findings": None,
+    }
     assert fetched["error_type"] == "ValueError"
     assert fetched["error_message"] == "boom"
 
@@ -281,3 +298,122 @@ def test_insert_gepa_attempt_is_idempotent_on_reinsert(store):
     results = store.list_gepa_attempts("run-1")
     assert len(results) == 1
     assert results[0]["scalar_score"] == 1.0
+
+
+# ---------------------------------------------------------------------------
+# cost telemetry columns + cost_summary
+# ---------------------------------------------------------------------------
+
+def test_cost_columns_round_trip(store):
+    payload = _make_record()
+    payload["token_usage"] = {
+        "input_tokens": 100,
+        "output_tokens": 5,
+        "cached_input_tokens": 40,
+        "llm_call_count": 1,
+        "models": ["gpt-4o"],
+    }
+    payload["cost_usd"] = 0.00123
+    payload["latency_ms"] = 45.6
+    payload["analysis_overhead"] = {"total_tokens": 500, "retries": 0, "cost_usd": 0.002}
+    payload["cost_findings"] = [
+        {"dimension": "observer_overhead", "severity": "info", "evidence": "e", "recommendation": "r"}
+    ]
+    store.insert(payload)
+    fetched = store.get(payload["trace_id"])
+    assert fetched["token_usage"] == payload["token_usage"]
+    assert fetched["cost_usd"] == 0.00123
+    assert fetched["latency_ms"] == 45.6
+    assert fetched["analysis_overhead"]["total_tokens"] == 500
+    assert fetched["cost_findings"][0]["dimension"] == "observer_overhead"
+
+
+def test_cost_summary_empty_store(store):
+    summary = store.cost_summary()
+    assert summary == {"nodes": [], "shared_prompt_blocks": []}
+
+
+def test_cost_summary_aggregates_per_node(store):
+    def _cost_payload(node_id, *, cost, latency, usage, findings=None):
+        payload = _make_record(node_id=node_id)
+        payload["cost_usd"] = cost
+        payload["latency_ms"] = latency
+        payload["token_usage"] = usage
+        if findings is not None:
+            payload["cost_findings"] = findings
+        return payload
+
+    warning = [{"dimension": "cache_efficiency", "severity": "warning", "evidence": "e", "recommendation": "r"}]
+    store.insert(
+        _cost_payload(
+            "router",
+            cost=0.005,
+            latency=100.0,
+            usage={
+                "input_tokens": 1000,
+                "output_tokens": 100,
+                "cached_input_tokens": 600,
+                "cache_write_tokens": 0,
+                "llm_call_count": 2,
+                "prompt_hashes": ["h1"],
+            },
+            findings=warning,
+        )
+    )
+    store.insert(
+        _cost_payload(
+            "router",
+            cost=0.01,
+            latency=200.0,
+            usage={
+                "input_tokens": 500,
+                "output_tokens": 50,
+                "cached_input_tokens": 0,
+                "cache_write_tokens": 0,
+                "llm_call_count": 1,
+                "prompt_hashes": ["h1"],
+            },
+        )
+    )
+    store.insert(
+        _cost_payload(
+            "other_node",
+            cost=None,
+            latency=None,
+            usage={
+                "input_tokens": 500,
+                "output_tokens": 10,
+                "cached_input_tokens": 0,
+                "cache_write_tokens": 0,
+                "llm_call_count": 1,
+                "prompt_hashes": ["h1", "h2"],
+            },
+        )
+    )
+
+    summary = store.cost_summary()
+    nodes = {n["node_id"]: n for n in summary["nodes"]}
+
+    router = nodes["router"]
+    assert router["trace_count"] == 2
+    assert router["llm_call_count"] == 3
+    assert router["input_tokens"] == 1500
+    assert router["output_tokens"] == 150
+    assert router["cached_input_tokens"] == 600
+    assert router["cache_hit_ratio"] == 0.4
+    assert router["total_cost_usd"] == 0.015
+    assert router["mean_cost_usd"] == 0.0075
+    assert router["mean_latency_ms"] == 150.0
+    assert router["cost_warning_count"] == 1
+
+    other = nodes["other_node"]
+    assert other["trace_count"] == 1
+    assert other["total_cost_usd"] == 0.0
+    assert other["mean_cost_usd"] is None
+    assert other["mean_latency_ms"] is None
+
+    # h1 was seen on two DIFFERENT nodes → shared block candidate.
+    shared = {b["hash"]: b for b in summary["shared_prompt_blocks"]}
+    assert shared["h1"]["node_ids"] == ["other_node", "router"]
+    assert shared["h1"]["occurrences"] == 3
+    assert "h2" not in shared

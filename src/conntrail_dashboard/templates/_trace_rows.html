@@ -6,6 +6,7 @@
       <th>Route</th>
       <th>Stability</th>
       <th>Entropy</th>
+      <th>Cost</th>
       <th>Status</th>
       <th>Failure</th>
     </tr>
@@ -18,11 +19,12 @@
       <td>{{ t.original_route }}</td>
       <td><span class="badge badge-{{ t.stability }}">{{ t.stability }}</span></td>
       <td>{{ "%.2f"|format(t.entropy_score) }}</td>
+      <td>{% if t.get("cost_usd") is not none %}${{ "%.4f"|format(t.cost_usd) }}{% else %}—{% endif %}</td>
       <td>{{ t.status }}</td>
       <td>{{ t.failure_category or "—" }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="7" class="empty">No traces match the current filters.</td></tr>
+    <tr><td colspan="8" class="empty">No traces match the current filters.</td></tr>
     {% endfor %}
   </tbody>
 </table>

@@ -94,3 +94,27 @@ def test_null_scalar_score_round_trips(client):
     client.post("/v1/gepa-attempts", json=payload)
     resp = client.get("/v1/gepa-attempts", params={"run_id": "run-1"})
     assert resp.json()["attempts"][0]["scalar_score"] is None
+
+
+def test_attempt_cost_fields_round_trip(client):
+    payload = _attempt_payload()
+    payload["token_usage"] = {"input_tokens": 400, "output_tokens": 40}
+    payload["cost_usd"] = 0.002
+    payload["latency_ms"] = 33.0
+    resp = client.post("/v1/gepa-attempts", json=payload)
+    assert resp.status_code == 201
+
+    fetched = client.get("/v1/gepa-attempts", params={"run_id": "run-1"}).json()
+    attempt = fetched["attempts"][0]
+    assert attempt["token_usage"] == {"input_tokens": 400, "output_tokens": 40}
+    assert attempt["cost_usd"] == 0.002
+    assert attempt["latency_ms"] == 33.0
+
+
+def test_attempt_without_cost_fields_defaults_to_none(client):
+    client.post("/v1/gepa-attempts", json=_attempt_payload())
+    fetched = client.get("/v1/gepa-attempts", params={"run_id": "run-1"}).json()
+    attempt = fetched["attempts"][0]
+    assert attempt["token_usage"] is None
+    assert attempt["cost_usd"] is None
+    assert attempt["latency_ms"] is None

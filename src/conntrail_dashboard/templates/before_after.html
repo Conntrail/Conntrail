@@ -26,6 +26,10 @@ mix, and dominant attribution under the original prompt vs. the optimized one.</
       <dt>Boundary</dt><dd>{{ first.boundary_count }}</dd>
       <dt>Fragile</dt><dd>{{ first.fragile_count }}</dd>
       <dt>Dominant attribution</dt><dd>{{ first.dominant_attribution or "—" }}</dd>
+      <dt>Tokens (in / out)</dt>
+      <dd>{{ first.total_input_tokens }} / {{ first.total_output_tokens }}</dd>
+      <dt>Estimated cost</dt>
+      <dd>{% if first.total_cost_usd is not none %}${{ "%.6f"|format(first.total_cost_usd) }}{% else %}—{% endif %}</dd>
     </dl>
   </div>
 
@@ -39,6 +43,10 @@ mix, and dominant attribution under the original prompt vs. the optimized one.</
       <dt>Boundary</dt><dd>{{ last.boundary_count }}</dd>
       <dt>Fragile</dt><dd>{{ last.fragile_count }}</dd>
       <dt>Dominant attribution</dt><dd>{{ last.dominant_attribution or "—" }}</dd>
+      <dt>Tokens (in / out)</dt>
+      <dd>{{ last.total_input_tokens }} / {{ last.total_output_tokens }}</dd>
+      <dt>Estimated cost</dt>
+      <dd>{% if last.total_cost_usd is not none %}${{ "%.6f"|format(last.total_cost_usd) }}{% else %}—{% endif %}</dd>
     </dl>
   </div>
 </div>
@@ -52,6 +60,12 @@ mix, and dominant attribution under the original prompt vs. the optimized one.</
   <dt>Confident count</dt><dd>{{ "%+d"|format(deltas.confident_count) }}</dd>
   <dt>Boundary count</dt><dd>{{ "%+d"|format(deltas.boundary_count) }}</dd>
   <dt>Fragile count</dt><dd>{{ "%+d"|format(deltas.fragile_count) }}</dd>
+  <dt>Input tokens</dt>
+  <dd>{{ "%+d"|format(deltas.total_input_tokens) if deltas.total_input_tokens is not none else "—" }}</dd>
+  <dt>Output tokens</dt>
+  <dd>{{ "%+d"|format(deltas.total_output_tokens) if deltas.total_output_tokens is not none else "—" }}</dd>
+  <dt>Estimated cost</dt>
+  <dd>{{ "%+.6f"|format(deltas.total_cost_usd) if deltas.total_cost_usd is not none else "—" }}</dd>
 </dl>
 {% else %}
 <p class="empty">Enter a run_id above — copy it from run_live.py's "Persisting attempts to ..." log line or run summary JSON.</p>

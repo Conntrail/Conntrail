@@ -207,3 +207,48 @@ class TestTraceRecordFailureFields:
         assert restored.status == "ok"
         assert restored.error_type is None
         assert restored.error_message is None
+
+
+class TestTraceRecordCostFields:
+    """Optional cost telemetry fields (token/cost/latency/overhead/findings)."""
+
+    def test_defaults_are_none(self):
+        record = _make_record()
+        assert record.token_usage is None
+        assert record.cost_usd is None
+        assert record.latency_ms is None
+        assert record.analysis_overhead is None
+        assert record.cost_findings is None
+
+    def test_to_dict_includes_cost_keys(self):
+        d = _make_record().to_dict()
+        for key in ("token_usage", "cost_usd", "latency_ms", "analysis_overhead", "cost_findings"):
+            assert key in d
+
+    def test_cost_fields_round_trip(self):
+        original = _make_record(
+            token_usage={"input_tokens": 100, "output_tokens": 5, "llm_call_count": 1},
+            cost_usd=0.000375,
+            latency_ms=12.5,
+            analysis_overhead={"total_tokens": 500, "retries": 1, "cost_usd": 0.001},
+            cost_findings=[
+                {"dimension": "cache_efficiency", "severity": "warning", "evidence": "e", "recommendation": "r"}
+            ],
+        )
+        restored = TraceRecord.from_dict(original.to_dict())
+        assert restored.token_usage == original.token_usage
+        assert restored.cost_usd == original.cost_usd
+        assert restored.latency_ms == original.latency_ms
+        assert restored.analysis_overhead == original.analysis_overhead
+        assert restored.cost_findings == original.cost_findings
+
+    def test_legacy_payload_missing_cost_keys_defaults_to_none(self):
+        payload = _make_record().to_dict()
+        for key in ("token_usage", "cost_usd", "latency_ms", "analysis_overhead", "cost_findings"):
+            del payload[key]
+        restored = TraceRecord.from_dict(payload)
+        assert restored.token_usage is None
+        assert restored.cost_usd is None
+        assert restored.latency_ms is None
+        assert restored.analysis_overhead is None
+        assert restored.cost_findings is None

@@ -27,6 +27,11 @@ class GepaAttemptIn(BaseModel):
     prompt_candidate: str
     scalar_score: float | None = None
     traces: list[TraceRecordModel]
+    # Optional attempt-level cost telemetry (stamped by the run harness when
+    # the optimizing run captured cost; derivable from traces otherwise).
+    token_usage: dict[str, int] | None = None
+    cost_usd: float | None = None
+    latency_ms: float | None = None
 
     def to_store_dict(self) -> dict[str, Any]:
         return {
@@ -35,6 +40,9 @@ class GepaAttemptIn(BaseModel):
             "prompt_candidate": self.prompt_candidate,
             "scalar_score": self.scalar_score,
             "traces": [t.model_dump() for t in self.traces],
+            "token_usage": self.token_usage,
+            "cost_usd": self.cost_usd,
+            "latency_ms": self.latency_ms,
         }
 
 
@@ -48,6 +56,9 @@ class GepaAttemptOut(BaseModel):
     prompt_candidate: str
     scalar_score: float | None
     traces: list[TraceRecordModel]
+    token_usage: dict[str, int] | None = None
+    cost_usd: float | None = None
+    latency_ms: float | None = None
 
 
 class GepaAttemptListResponse(BaseModel):

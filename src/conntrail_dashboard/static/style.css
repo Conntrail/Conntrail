@@ -191,3 +191,18 @@ pre {
   overflow-y: auto;
   font-size: 0.85rem;
 }
+
+.cost-findings {
+  list-style: none;
+  padding: 0;
+}
+
+.cost-findings li {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.cost-findings em { color: var(--muted, #666); }

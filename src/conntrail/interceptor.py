@@ -15,7 +15,9 @@ import asyncio
 import inspect
 import logging
 import random
+import time
 from collections.abc import Callable
+from contextlib import nullcontext
 from contextvars import ContextVar
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
@@ -23,6 +25,7 @@ from typing import TYPE_CHECKING, Any
 from conntrail.config import ConntrailConfig
 
 if TYPE_CHECKING:
+    from conntrail.cost import CostCapture
     from conntrail.record import TraceRecord
 
 logger = logging.getLogger("conntrail")
@@ -84,27 +87,44 @@ class NodeInterceptor:
         already known without further LLM calls) and re-raises. An async
         node_fn exceeding config.timeout_seconds is recorded the same way
         with error_type="timeout" and re-raises asyncio.TimeoutError.
+
+        Cost telemetry (config.capture_cost, default on): wall-clock latency
+        plus a LangChain callback handler observing the node's internal LLM
+        calls (tokens, cache hits, prompt sizes) — threaded into the trace
+        record and the analysis-overhead summary.
         """
+        from conntrail.cost import CostCapture, llm_cost_capture
+
+        capture = CostCapture() if self.config.capture_cost else None
+        start = time.perf_counter()
         try:
-            if inspect.iscoroutinefunction(self.node_fn):
-                if self.config.timeout_seconds is not None:
-                    output = await asyncio.wait_for(
-                        self.node_fn(state), timeout=self.config.timeout_seconds
-                    )
+            with llm_cost_capture(capture.handler) if capture else nullcontext(None):
+                if inspect.iscoroutinefunction(self.node_fn):
+                    if self.config.timeout_seconds is not None:
+                        output = await asyncio.wait_for(
+                            self.node_fn(state), timeout=self.config.timeout_seconds
+                        )
+                    else:
+                        output = await self.node_fn(state)
                 else:
-                    output = await self.node_fn(state)
-            else:
-                output = self.node_fn(state)
+                    output = self.node_fn(state)
         except Exception as exc:
-            await self._handle_node_exception(state, exc)
+            if capture is not None:
+                capture.finish(time.perf_counter() - start)
+            await self._handle_node_exception(state, exc, cost=capture)
             raise
+
+        if capture is not None:
+            capture.finish(time.perf_counter() - start)
 
         if self._should_sample():
             if self.config.async_mode:
-                asyncio.create_task(self._run_contrast_analysis(state, output))
+                asyncio.create_task(
+                    self._run_contrast_analysis(state, output, node_cost=capture)
+                )
             else:
                 try:
-                    record = await self._build_trace_record(state, output)
+                    record = await self._build_trace_record(state, output, node_cost=capture)
                 except Exception as exc:
                     logger.warning(
                         "conntrail: analysis failed for node %r: %s", self.node_id, exc
@@ -125,7 +145,12 @@ class NodeInterceptor:
 
         return output
 
-    async def _handle_node_exception(self, input_state: dict[str, Any], exc: Exception) -> None:
+    async def _handle_node_exception(
+        self,
+        input_state: dict[str, Any],
+        exc: Exception,
+        cost: CostCapture | None = None,
+    ) -> None:
         """
         Build and export an error TraceRecord for a node_fn call that raised.
 
@@ -133,6 +158,9 @@ class NodeInterceptor:
         output to contrast against. Still exports the record and fires
         on_alert (entropy_score is pinned to 1.0, so any valid threshold
         fires). Does not re-raise; the caller (__call__) does that.
+
+        Stamps whatever cost data was captured before the failure (latency,
+        partial LLM usage) when ``cost`` is provided.
         """
         from conntrail.analyser import RetryExhaustedError
         from conntrail.contrast import ContrastSet
@@ -164,6 +192,11 @@ class NodeInterceptor:
             status="error",
             error_type=error_type,
             error_message=str(exc),
+            token_usage=cost.usage_summary() if cost is not None else None,
+            cost_usd=(
+                cost.estimated_cost(self.config.model_prices) if cost is not None else None
+            ),
+            latency_ms=cost.latency_ms if cost is not None else None,
         )
 
         await self._export(record)
@@ -181,12 +214,14 @@ class NodeInterceptor:
         self,
         input_state: dict[str, Any],
         original_output: dict[str, Any],
+        node_cost: CostCapture | None = None,
     ) -> TraceRecord | None:
         """
         Run the contrast analysis pipeline and return a TraceRecord, or None on failure.
         """
         from conntrail.analyser import DivergenceAnalyser
         from conntrail.contrast import ContrastGenerator
+        from conntrail.cost import build_analysis_overhead
         from conntrail.record import TraceRecord
         from conntrail.utils.providers import get_chat_model
 
@@ -208,8 +243,21 @@ class NodeInterceptor:
             route_key=self.route_key,
         )
 
+        capture = node_cost if self.config.capture_cost else None
+        analysis_overhead = None
+        if capture is not None:
+            analysis_overhead = build_analysis_overhead(
+                re_run_usage=result.analysis_usage,
+                re_run_models=result.analysis_models,
+                re_run_latency_ms=result.analysis_latency_ms,
+                retries=result.retries,
+                contrast_usage=gen.last_usage,
+                contrast_model=gen.last_model or self.config.contrast_model,
+                price_overrides=self.config.model_prices,
+            )
+
         stability = TraceRecord.stability_label(result.entropy_score)
-        return TraceRecord(
+        record = TraceRecord(
             trace_id=TraceRecord.make_id(),
             node_id=self.node_id,
             timestamp=datetime.now(UTC),
@@ -229,19 +277,35 @@ class NodeInterceptor:
             raw_contrasts=contrasts,
             raw_outputs=result.contrast_routes,
             counterfactual_route=result.counterfactual_route,
+            token_usage=capture.usage_summary() if capture is not None else None,
+            cost_usd=(
+                capture.estimated_cost(self.config.model_prices)
+                if capture is not None
+                else None
+            ),
+            latency_ms=capture.latency_ms if capture is not None else None,
+            analysis_overhead=analysis_overhead,
         )
+
+        if capture is not None:
+            from conntrail.cost_analyzer import analyze_cost
+
+            record.cost_findings = analyze_cost(record) or None
+
+        return record
 
     async def _run_contrast_analysis(
         self,
         input_state: dict[str, Any],
         original_output: dict[str, Any],
+        node_cost: CostCapture | None = None,
     ) -> None:
         """
         Fire-and-forget wrapper for async_mode=True. Builds and exports the record.
         Called via asyncio.create_task() — never raises.
         """
         try:
-            record = await self._build_trace_record(input_state, original_output)
+            record = await self._build_trace_record(input_state, original_output, node_cost)
             if record is None:
                 return
             await self._export(record)

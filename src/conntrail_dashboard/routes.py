@@ -133,6 +133,10 @@ def _attempt_summary(attempt: dict[str, Any]) -> dict[str, Any]:
     dominant_attribution properties (src/conntrail/gepa/schema.py) — G3's API
     stores an attempt's raw traces, not these derived numbers, so the
     dashboard recomputes them the same way the dataclass would.
+
+    Cost stats prefer the attempt-level fields stamped at end_attempt (when
+    the optimizing run captured cost); otherwise they aggregate the embedded
+    traces' cost telemetry.
     """
     traces = attempt.get("traces") or []
     n = len(traces)
@@ -144,6 +148,32 @@ def _attempt_summary(attempt: dict[str, Any]) -> dict[str, Any]:
         counts = Counter(t.get("attribution_dimension") for t in traces)
         dominant_attribution = counts.most_common(1)[0][0]
 
+    attempt_usage = attempt.get("token_usage")
+    if isinstance(attempt_usage, dict):
+        input_tokens = attempt_usage.get("input_tokens") or 0
+        output_tokens = attempt_usage.get("output_tokens") or 0
+    else:
+        input_tokens = sum(
+            (t.get("token_usage") or {}).get("input_tokens") or 0
+            for t in traces
+            if isinstance(t.get("token_usage"), dict)
+        )
+        output_tokens = sum(
+            (t.get("token_usage") or {}).get("output_tokens") or 0
+            for t in traces
+            if isinstance(t.get("token_usage"), dict)
+        )
+
+    cost_usd = attempt.get("cost_usd")
+    if cost_usd is None:
+        costs = [t.get("cost_usd") for t in traces if t.get("cost_usd") is not None]
+        cost_usd = sum(costs) if costs else None
+
+    latency_ms = attempt.get("latency_ms")
+    if latency_ms is None:
+        latencies = [t.get("latency_ms") for t in traces if t.get("latency_ms") is not None]
+        latency_ms = sum(latencies) / len(latencies) if latencies else None
+
     return {
         "attempt_id": attempt["attempt_id"],
         "prompt_candidate": attempt["prompt_candidate"],
@@ -154,6 +184,10 @@ def _attempt_summary(attempt: dict[str, Any]) -> dict[str, Any]:
         "boundary_count": boundary_count,
         "confident_count": n - fragile_count - boundary_count,
         "dominant_attribution": dominant_attribution,
+        "total_input_tokens": input_tokens,
+        "total_output_tokens": output_tokens,
+        "total_cost_usd": cost_usd,
+        "mean_latency_ms": latency_ms,
     }
 
 
@@ -185,6 +219,23 @@ async def before_after(request: Request, run_id: str | None = None):
                 "fragile_count": _delta(last, first, "fragile_count"),
                 "boundary_count": _delta(last, first, "boundary_count"),
                 "confident_count": _delta(last, first, "confident_count"),
+                "total_cost_usd": _delta(last, first, "total_cost_usd"),
+                "total_input_tokens": _delta(last, first, "total_input_tokens"),
+                "total_output_tokens": _delta(last, first, "total_output_tokens"),
             }
 
     return request.app.state.templates.TemplateResponse(request, "before_after.html", context)
+
+
+@router.get("/cost", response_class=HTMLResponse)
+async def cost_view(request: Request):
+    summary = await _collector(request).get_cost_summary()
+    return request.app.state.templates.TemplateResponse(
+        request,
+        "cost_view.html",
+        {
+            "nodes": summary["nodes"],
+            "shared_prompt_blocks": summary["shared_prompt_blocks"],
+            "scanned_traces": summary["scanned_traces"],
+        },
+    )

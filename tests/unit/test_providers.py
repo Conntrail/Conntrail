@@ -39,6 +39,8 @@ class TestInferProvider:
             ("gpt-4o-mini", "openai"),
             ("o1-preview", "openai"),
             ("o3-mini", "openai"),
+            ("gemini-2.0-flash", "google"),
+            ("gemini-2.5-pro", "google"),
             ("o4-mini", "openai"),
         ],
     )
@@ -70,7 +72,14 @@ class TestInferProvider:
 
 class TestAvailableProvider:
     def _clear_all_keys(self, monkeypatch):
-        for key in ("GROQ_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "OPENROUTER_API_KEY"):
+        for key in (
+            "GROQ_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "OPENAI_API_KEY",
+            "GOOGLE_API_KEY",
+            "GEMINI_API_KEY",
+            "OPENROUTER_API_KEY",
+        ):
             monkeypatch.delenv(key, raising=False)
 
     def test_prefers_groq_first(self, monkeypatch):
@@ -90,6 +99,12 @@ class TestAvailableProvider:
         self._clear_all_keys(monkeypatch)
         monkeypatch.setenv("OPENAI_API_KEY", "o")
         assert _available_provider() == "openai"
+
+    def test_falls_back_to_google(self, monkeypatch):
+        self._clear_all_keys(monkeypatch)
+        monkeypatch.setenv("GOOGLE_API_KEY", "gg")
+        monkeypatch.setenv("OPENROUTER_API_KEY", "or")
+        assert _available_provider() == "google"
 
     def test_falls_back_to_openrouter(self, monkeypatch):
         self._clear_all_keys(monkeypatch)
@@ -132,6 +147,14 @@ class TestGetChatModel:
         get_chat_model("some-unknown-model")
         spy.assert_called_once_with(
             "openai", "gpt-4o-mini", max_tokens=512, temperature=0.0
+        )
+
+    def test_resolves_gemini_when_key_present(self, monkeypatch, mocker):
+        monkeypatch.setenv("GOOGLE_API_KEY", "gg")
+        spy = mocker.patch.object(providers, "_build_model")
+        get_chat_model("gemini-2.0-flash", max_tokens=100)
+        spy.assert_called_once_with(
+            "google", "gemini-2.0-flash", max_tokens=100, temperature=0.0
         )
 
     def test_local_bare_uses_default_model_name(self, mocker):
@@ -208,6 +231,9 @@ class TestBuildModel:
         fake_class = self._inject_fake_module(monkeypatch, "langchain_openai", "ChatOpenAI")
         model = _build_model("openai", "gpt-4o-mini", max_tokens=50, temperature=0.0)
         assert isinstance(model, fake_class)
+        # Usage must be requested explicitly — langchain-openai auto-enables it
+        # only for the default api.openai.com base URL.
+        assert model.kwargs["stream_usage"] is True
 
     def test_openrouter_dispatch(self, monkeypatch):
         fake_class = self._inject_fake_module(monkeypatch, "langchain_openai", "ChatOpenAI")
@@ -216,6 +242,27 @@ class TestBuildModel:
         assert isinstance(model, fake_class)
         assert model.kwargs["base_url"] == providers._OPENROUTER_BASE_URL
         assert model.kwargs["api_key"] == "or-key"
+        assert model.kwargs["stream_usage"] is True
+
+    def test_gemini_dispatch(self, monkeypatch):
+        fake_class = self._inject_fake_module(
+            monkeypatch, "langchain_google_genai", "ChatGoogleGenerativeAI"
+        )
+        monkeypatch.setenv("GOOGLE_API_KEY", "g-key")
+        model = _build_model("google", "gemini-2.0-flash", max_tokens=50, temperature=0.0)
+        assert isinstance(model, fake_class)
+        assert model.kwargs["model"] == "gemini-2.0-flash"
+        assert model.kwargs["google_api_key"] == "g-key"
+        assert model.kwargs["max_output_tokens"] == 50
+
+    def test_gemini_key_falls_back_to_gemini_api_key_env(self, monkeypatch):
+        self._inject_fake_module(
+            monkeypatch, "langchain_google_genai", "ChatGoogleGenerativeAI"
+        )
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.setenv("GEMINI_API_KEY", "alt-key")
+        model = _build_model("google", "gemini-2.0-flash", max_tokens=50, temperature=0.0)
+        assert model.kwargs["google_api_key"] == "alt-key"
 
     def test_local_dispatch_none_auth_no_streaming_hack(self, monkeypatch):
         fake_class = self._inject_fake_module(monkeypatch, "langchain_openai", "ChatOpenAI")
@@ -224,6 +271,9 @@ class TestBuildModel:
         assert isinstance(model, fake_class)
         assert model.kwargs["api_key"] == "not-needed"
         assert "streaming" not in model.kwargs
+        # Local OpenAI-compatible servers (Unsloth, llama.cpp, Ollama /v1)
+        # report usage only when asked.
+        assert model.kwargs["stream_usage"] is True
 
     def test_local_dispatch_api_key_auth(self, monkeypatch):
         fake_class = self._inject_fake_module(monkeypatch, "langchain_openai", "ChatOpenAI")
@@ -232,6 +282,7 @@ class TestBuildModel:
         model = _build_model("local", "some-model", max_tokens=50, temperature=0.0)
         assert isinstance(model, fake_class)
         assert model.kwargs["api_key"] == "static-token"
+        assert model.kwargs["stream_usage"] is True
 
     def test_local_dispatch_jwt_auth_fetches_token(self, monkeypatch, mocker):
         fake_class = self._inject_fake_module(monkeypatch, "langchain_openai", "ChatOpenAI")
@@ -241,6 +292,7 @@ class TestBuildModel:
         assert isinstance(model, fake_class)
         assert model.kwargs["api_key"] == "tok123"
         assert model.kwargs["streaming"] is True
+        assert model.kwargs["stream_usage"] is True
 
     def test_unknown_provider_raises(self):
         with pytest.raises(ValueError, match="Unknown provider"):

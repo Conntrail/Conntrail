@@ -11,12 +11,16 @@ import inspect
 import logging
 import random
 import re
+import time
 from collections.abc import Callable
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
 
 from conntrail.contrast import ContrastSet
 from conntrail.utils.entropy import routing_entropy
+
+if TYPE_CHECKING:
+    from conntrail.cost import TokenUsage
 
 logger = logging.getLogger("conntrail")
 
@@ -58,6 +62,22 @@ class AnalysisResult:
     attribution_dimension: str
     counterfactual_route: str | None
     raw_outputs: dict[str, Any]       # all 4 node outputs keyed by variant name
+    # --- observer self-cost (the 4 re-runs' own LLM usage; None when the
+    # --- node makes no observable LangChain LLM calls) ---
+    analysis_usage: TokenUsage | None = None
+    analysis_models: list[str] = field(default_factory=list)
+    analysis_latency_ms: float | None = None
+    retries: int = 0
+
+
+@dataclass
+class _CallStats:
+    """Per-variant cost/latency stats filled in by _call_node."""
+
+    latency_ms: float = 0.0
+    retries: int = 0
+    usage: TokenUsage | None = None
+    models: list[str] = field(default_factory=list)
 
 
 class DivergenceAnalyser:
@@ -100,10 +120,16 @@ class DivergenceAnalyser:
             "opposite": {**original_input, input_key: contrast_set.opposite},
         }
 
-        # Run all 4 concurrently
+        # Run all 4 concurrently, capturing per-variant cost/latency stats.
+        stats_by_name = {name: _CallStats() for name in variants}
+        start = time.perf_counter()
         outputs_list = await asyncio.gather(
-            *[self._call_node(node_fn, state) for state in variants.values()]
+            *[
+                self._call_node(node_fn, state, stats=stats_by_name[name])
+                for name, state in variants.items()
+            ]
         )
+        analysis_latency_ms = (time.perf_counter() - start) * 1000
         raw_outputs: dict[str, Any] = dict(zip(variants.keys(), outputs_list))
 
         # Extract route label from each output
@@ -119,6 +145,13 @@ class DivergenceAnalyser:
             contrast_routes=contrast_routes,
         )
 
+        from conntrail.cost import TokenUsage
+
+        analysis_usage = TokenUsage.merged(
+            s.usage for s in stats_by_name.values() if s.usage is not None
+        )
+        analysis_models = sorted({m for s in stats_by_name.values() for m in s.models})
+
         return AnalysisResult(
             original_route=routes["original"],
             contrast_routes=contrast_routes,
@@ -126,45 +159,72 @@ class DivergenceAnalyser:
             attribution_dimension=attribution,
             counterfactual_route=counterfactual,
             raw_outputs=raw_outputs,
+            analysis_usage=analysis_usage,
+            analysis_models=analysis_models,
+            analysis_latency_ms=analysis_latency_ms,
+            retries=sum(s.retries for s in stats_by_name.values()),
         )
 
-    async def _call_node(self, node_fn: Callable, state: dict[str, Any]) -> Any:
+    async def _call_node(
+        self, node_fn: Callable, state: dict[str, Any], stats: _CallStats | None = None
+    ) -> Any:
         """Call node_fn with automatic retry on rate-limit errors (429).
 
         Parses the provider's retry-after hint when present (e.g. Groq's
         "Please try again in 2m5.3s" message) so retries respect the actual
         window rather than blind exponential backoff.
 
+        When ``stats`` is provided, records wall-clock latency (including
+        retry backoff — retries are latency too), retry count, and the
+        node-internal LLM usage observed via a cost callback handler.
+
         Raises:
             RetryExhaustedError: if a rate-limit error persists through all
                 max_retries attempts. Any other exception propagates as-is
                 (it never entered a retry loop).
         """
+        from conntrail.cost import CostCallbackHandler, llm_cost_capture
+
         max_retries = 4
-        for attempt in range(max_retries):
-            try:
-                if inspect.iscoroutinefunction(node_fn):
-                    return await node_fn(state)
-                return await asyncio.to_thread(node_fn, state)
-            except Exception as exc:
-                msg = str(exc)
-                is_rate_limit = (
-                    "429" in msg
-                    or "rate_limit" in msg.lower()
-                    or "rate limit" in msg.lower()
-                )
-                if is_rate_limit and attempt < max_retries - 1:
-                    delay = self._parse_retry_after(msg) or (5.0 * (2 ** attempt) + random.uniform(0, 1))
-                    logger.debug(
-                        "conntrail: rate limit on node call (attempt %d), retrying in %.1fs",
-                        attempt + 1,
-                        delay,
-                    )
-                    await asyncio.sleep(delay)
-                    continue
-                if is_rate_limit:
-                    raise RetryExhaustedError(exc) from exc
-                raise
+        handler = CostCallbackHandler()
+        start = time.perf_counter()
+        try:
+            with llm_cost_capture(handler):
+                for attempt in range(max_retries):
+                    try:
+                        if inspect.iscoroutinefunction(node_fn):
+                            return await node_fn(state)
+                        return await asyncio.to_thread(node_fn, state)
+                    except Exception as exc:
+                        msg = str(exc)
+                        is_rate_limit = (
+                            "429" in msg
+                            or "rate_limit" in msg.lower()
+                            or "rate limit" in msg.lower()
+                        )
+                        if is_rate_limit and attempt < max_retries - 1:
+                            if stats is not None:
+                                stats.retries += 1
+                            delay = self._parse_retry_after(msg) or (
+                                5.0 * (2 ** attempt) + random.uniform(0, 1)
+                            )
+                            logger.debug(
+                                "conntrail: rate limit on node call (attempt %d), retrying in %.1fs",
+                                attempt + 1,
+                                delay,
+                            )
+                            await asyncio.sleep(delay)
+                            continue
+                        if is_rate_limit:
+                            if stats is not None:
+                                stats.retries += 1
+                            raise RetryExhaustedError(exc) from exc
+                        raise
+        finally:
+            if stats is not None:
+                stats.latency_ms = (time.perf_counter() - start) * 1000
+                stats.usage = handler.total_usage()
+                stats.models = sorted({c.model for c in handler.calls if c.model})
 
     @staticmethod
     def _parse_retry_after(error_msg: str) -> float | None:

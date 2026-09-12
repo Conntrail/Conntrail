@@ -9,7 +9,7 @@ run of this plan (see §6).
 
 | Layer | Command | What it covers |
 |---|---|---|
-| Pure unit | `pytest tests/unit -m "not integration"` (~3 s, no LLM) | parsing edge cases, entropy math, interceptor behavior (incl. F6's record-and-re-raise), store/CRUD, classifier, auth gate, HttpExporter retry logic, dashboard routes vs a mocked collector, GEPA modules with `dspy` mocked |
+| Pure unit | `pytest tests/unit -m "not integration"` (~3 s, no LLM) | parsing edge cases, entropy math, interceptor behavior (incl. F6's record-and-re-raise), store/CRUD, classifier, auth gate, HttpExporter retry logic, dashboard routes vs a mocked collector, GEPA modules with `dspy` mocked, cost telemetry (usage extraction from Anthropic/OpenAI metadata shapes, price table + overrides, the LangChain callback capture — incl. an end-to-end test through a real fake chat model — cost findings, cost-summary aggregation) |
 | Live contrast (optional, F3) | `pytest tests/unit/test_contrast.py -m integration` | `ContrastGenerator.generate()` against a real LLM on fixture inputs |
 | Integration | `pytest tests/integration -m "integration or slow"` | F7: `trace_graph` doesn't alter graph output with a live pipeline; T6: full `trace_node → HttpExporter → uvicorn collector → sqlite → query API` round trip (happy + error paths); G2: a real small `CPEGEPAOptimizer.compile()` producing ≥2 attempts with real traces |
 | Lint | `ruff check .` | style + import hygiene |
@@ -94,6 +94,16 @@ composed collector; run a small traced function from the host against
 `localhost:<COLLECTOR_HOST_PORT>` and see it in the dashboard; `docker
 restart` the collector container and confirm the trace survives (sqlite
 volume persistence).
+
+**3.6 Cost telemetry (C-series)** — with the collector running and a live
+LLM: run a small traced node (LangChain-based for full token capture); confirm
+the trace detail page shows input/output/cached tokens, estimated cost,
+latency, and analysis overhead; confirm cost findings appear (e.g. missing
+`cache_control` on Anthropic, verbose output for a label route); `GET
+/v1/cost-summary` aggregates per node and the dashboard **Cost** page renders
+(cache hit ratio, shared instruction blocks). For the GEPA run: attempts POST
+with `token_usage`/`cost_usd`, the before/after panel shows token/cost deltas,
+and `--cost-weight` changes candidate scoring (0 = pure task accuracy).
 
 ## 4. Bugs found while verifying (fixed)
 

@@ -57,6 +57,7 @@ from pathlib import Path
 
 import dspy
 import httpx
+from dspy.utils.usage_tracker import track_usage
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -64,6 +65,7 @@ from customer_support_student import CustomerSupportRouter  # noqa: E402
 from trainset import TRAINSET  # noqa: E402
 
 from conntrail import ConntrailConfig  # noqa: E402
+from conntrail.cost import TokenUsage, estimate_cost  # noqa: E402
 from conntrail.gepa import CPEGEPAOptimizer  # noqa: E402
 from conntrail.gepa.bridge import TraceCollector  # noqa: E402
 from conntrail.interceptor import NodeInterceptor  # noqa: E402
@@ -89,6 +91,11 @@ def make_lm(model: str, *, api_key: str | None, max_tokens: int) -> dspy.LM:
     chain-of-thought disabled in JWT mode so small max_tokens budgets aren't
     consumed by reasoning. Anything else is an Anthropic model name, per the
     original G2 scope.
+
+    cache=False: dspy's persistent response cache returns cache_hit responses
+    with empty usage, which makes every attempt's token stamp (and the
+    cost-weighted scoring that reads it) silently None on warm prompts. A
+    cost-measuring run must see real per-call usage, so caching is off.
     """
     if _is_local(model):
         from conntrail.utils.providers import _resolve_local_api_key, local_chat_kwargs
@@ -102,22 +109,75 @@ def make_lm(model: str, *, api_key: str | None, max_tokens: int) -> dspy.LM:
             api_key=_resolve_local_api_key(),
             max_tokens=max_tokens,
             temperature=0.0,
+            cache=False,
             **local_chat_kwargs(),
         )
     if not api_key:
         raise RuntimeError(f"ANTHROPIC_API_KEY is required for non-local model {model!r}.")
-    return dspy.LM(f"anthropic/{model}", api_key=api_key, max_tokens=max_tokens)
+    return dspy.LM(
+        f"anthropic/{model}", api_key=api_key, max_tokens=max_tokens, cache=False
+    )
 
 
-def make_traced_router_class(collector: TraceCollector, config: ConntrailConfig) -> type[dspy.Module]:
+def _dspy_usage_summary(tracker) -> dict[str, int] | None:
+    """Flatten dspy's per-LM usage totals into the attempt token_usage shape."""
+    totals = tracker.get_total_tokens()
+    if not totals:
+        return None
+    input_tokens = output_tokens = cached_tokens = 0
+    for entry in totals.values():
+        input_tokens += int(entry.get("prompt_tokens") or 0)
+        output_tokens += int(entry.get("completion_tokens") or 0)
+        details = entry.get("prompt_tokens_details") or {}
+        if isinstance(details, dict):
+            cached_tokens += int(details.get("cached_tokens") or 0)
+    return {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "cached_input_tokens": cached_tokens,
+    }
+
+
+def _dspy_usage_cost(tracker) -> float | None:
+    """Estimate USD cost of a tracker's usage via the SDK's price table."""
+    total = 0.0
+    seen = False
+    for lm_name, entry in tracker.get_total_tokens().items():
+        details = entry.get("prompt_tokens_details") or {}
+        usage = TokenUsage(
+            input_tokens=int(entry.get("prompt_tokens") or 0),
+            output_tokens=int(entry.get("completion_tokens") or 0),
+            cached_input_tokens=int(details.get("cached_tokens") or 0)
+            if isinstance(details, dict)
+            else 0,
+        )
+        seen = True
+        total += estimate_cost(lm_name, usage)
+    return round(total, 6) if seen else None
+
+
+def make_traced_router_class(
+    collector: TraceCollector,
+    config: ConntrailConfig,
+    *,
+    local_student: bool = False,
+) -> type[dspy.Module]:
     """Build a traced dspy.Module class bound to `collector`/`config` via closure.
 
     forward() builds a fresh NodeInterceptor per call, driving it off
     `self.inner` — always the *currently executing* GEPA candidate copy, so
-    whatever instructions GEPA mutated onto that copy are exactly what gets
+    that whatever instructions GEPA mutated onto that copy are exactly what gets
     traced. `collector`/`config` stay out of instance state entirely (see
     module docstring, point 2) so dspy's per-candidate module copying can't
     silently fork them.
+
+    The student's dspy LM calls are invisible to the SDK's LangChain cost
+    capture, so forward() wraps the traced rollout in dspy's own usage
+    tracker and stamps the totals (plus estimated cost for cloud models —
+    local servers are marginal-cost-free) onto the attempt record. The
+    tracker covers the hot-path call AND the analyser's 4 divergence re-runs;
+    every rollout pays that same constant, so candidate-vs-baseline cost
+    comparisons in the feedback function stay fair.
     """
 
     class TracedCustomerSupportRouter(dspy.Module):
@@ -139,8 +199,13 @@ def make_traced_router_class(collector: TraceCollector, config: ConntrailConfig)
             )
             prompt_candidate = self.inner.classify.signature.instructions
             collector.begin_attempt(prompt_candidate)
-            state = asyncio.run(interceptor({"message": message, "category": None}))
-            collector.end_attempt()
+            with track_usage() as tracker:
+                state = asyncio.run(interceptor({"message": message, "category": None}))
+            attempt = collector.end_attempt()
+            attempt.token_usage = _dspy_usage_summary(tracker)
+            attempt.cost_usd = (
+                0.0 if local_student and attempt.token_usage else _dspy_usage_cost(tracker)
+            )
             return dspy.Prediction(category=state["category"])
 
     return TracedCustomerSupportRouter
@@ -160,6 +225,9 @@ def make_collector_poster(collector_url: str, api_key: str | None, run_id: str):
             "prompt_candidate": attempt.prompt_candidate,
             "scalar_score": attempt.scalar_score,
             "traces": [t.to_dict() for t in attempt.traces],
+            "token_usage": attempt.token_usage,
+            "cost_usd": attempt.total_cost_usd,
+            "latency_ms": attempt.mean_latency_ms,
         }
         try:
             response = httpx.post(
@@ -220,8 +288,16 @@ def parse_args() -> argparse.Namespace:
         "--contrast-model",
         default=os.environ.get("CONNTRAIL_CONTRAST_MODEL", "claude-haiku-4-5-20251001"),
         help="Contrast-generation model used by the tracing itself (never the "
-             "student model). Same conventions as --student-model. Defaults to "
-             "CONNTRAIL_CONTRAST_MODEL, then the SDK default.",
+        "student model). Same conventions as --student-model. Defaults to "
+        "CONNTRAIL_CONTRAST_MODEL, then the SDK default.",
+    )
+    parser.add_argument(
+        "--cost-weight",
+        type=float,
+        default=0.1,
+        help="Lambda folding token cost into the GEPA score: "
+        "score = task - cost_weight * (tokens/baseline - 1). 0 disables cost "
+        "scoring. Default: 0.1.",
     )
     parser.add_argument(
         "--output",
@@ -307,6 +383,7 @@ def main() -> None:
             async_mode=False,
         ),
         on_attempt_scored=on_attempt_scored,
+        cost_weight=args.cost_weight,
         gepa_kwargs={
             "max_metric_calls": args.max_metric_calls,
             "reflection_lm": make_lm(
@@ -320,7 +397,11 @@ def main() -> None:
             "num_threads": 1,
         },
     )
-    TracedRouter = make_traced_router_class(optimizer.collector, optimizer.conntrail_config)
+    TracedRouter = make_traced_router_class(
+        optimizer.collector,
+        optimizer.conntrail_config,
+        local_student=_is_local(args.student_model),
+    )
     optimizer.student = TracedRouter(CustomerSupportRouter())
 
     logger.info(
@@ -340,6 +421,7 @@ def main() -> None:
         "run_id": run_id,
         "num_trainset_examples": len(trainset),
         "max_metric_calls": args.max_metric_calls,
+        "cost_weight": args.cost_weight,
         "num_attempts": len(attempts),
         "attempts": [
             {
@@ -351,6 +433,10 @@ def main() -> None:
                 "boundary_count": a.boundary_count,
                 "dominant_attribution": a.dominant_attribution,
                 "num_traces": len(a.traces),
+                "total_input_tokens": a.total_input_tokens,
+                "total_output_tokens": a.total_output_tokens,
+                "total_cost_usd": a.total_cost_usd,
+                "mean_latency_ms": a.mean_latency_ms,
             }
             for a in attempts
         ],
@@ -372,12 +458,23 @@ def main() -> None:
             entropies = [a.mean_entropy for a in group if a.mean_entropy is not None]
             return sum(entropies) / len(entropies) if entropies else None
 
+        def _mean_tokens(group: list) -> float | None:
+            tokens = [
+                (a.total_input_tokens or 0) + (a.total_output_tokens or 0)
+                for a in group
+                if a.total_input_tokens is not None or a.total_output_tokens is not None
+            ]
+            return sum(tokens) / len(tokens) if tokens else None
+
         candidates = list(by_candidate.items())
         print(f"\nAttempts recorded: {len(attempts)} across {len(candidates)} distinct prompt candidate(s)")
         for i, (prompt, group) in enumerate(candidates):
+            mean_tokens = _mean_tokens(group)
+            tokens_part = f", mean tokens: {mean_tokens:.0f}" if mean_tokens is not None else ""
             print(
                 f"  candidate {i} ({len(group)} attempts) — "
                 f"mean task accuracy: {_mean_score(group)}, mean entropy: {_mean_entropy(group)}"
+                f"{tokens_part}"
             )
             print(f"    prompt: {prompt[:150]!r}")
 

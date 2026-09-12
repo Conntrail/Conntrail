@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Cost — Conntrail{% endblock %}
+{% block content %}
+<h1>Cost</h1>
+<p class="subtitle">Per-node token usage, cache efficiency, and estimated cost over the
+last {{ scanned_traces }} traces. Cost figures are estimates from the SDK's price
+table — treat them as signals, not invoices.</p>
+
+{% if nodes %}
+<table class="trace-table">
+  <thead>
+    <tr>
+      <th>Node</th>
+      <th>Traces</th>
+      <th>LLM calls</th>
+      <th>Input tok</th>
+      <th>Cache hit</th>
+      <th>Cache writes</th>
+      <th>Output tok</th>
+      <th>Est. cost (total)</th>
+      <th>Mean cost</th>
+      <th>Mean latency</th>
+      <th>Cost warnings</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for n in nodes %}
+    <tr>
+      <td>{{ n.node_id }}</td>
+      <td>{{ n.trace_count }}</td>
+      <td>{{ n.llm_call_count or "—" }}</td>
+      <td>{{ n.input_tokens or "—" }}</td>
+      <td>
+        {% if n.cache_hit_ratio is not none %}{{ "%.0f%%"|format(n.cache_hit_ratio * 100) }}{% else %}—{% endif %}
+      </td>
+      <td>{{ n.cache_write_tokens or "—" }}</td>
+      <td>{{ n.output_tokens or "—" }}</td>
+      <td>{% if n.total_cost_usd %}${{ "%.4f"|format(n.total_cost_usd) }}{% else %}—{% endif %}</td>
+      <td>
+        {% if n.mean_cost_usd is not none %}${{ "%.6f"|format(n.mean_cost_usd) }}{% else %}—{% endif %}
+      </td>
+      <td>
+        {% if n.mean_latency_ms is not none %}{{ "%.1f ms"|format(n.mean_latency_ms) }}{% else %}—{% endif %}
+      </td>
+      <td>{{ n.cost_warning_count or "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">No cost telemetry yet — traces produced with capture_cost=True
+(the default) report tokens, cache hits, and estimated cost here.</p>
+{% endif %}
+
+{% if shared_prompt_blocks %}
+<h2>Shared instruction blocks across nodes</h2>
+<p class="subtitle">The same instruction block (by content fingerprint) is sent by
+multiple nodes — a shared, cacheable prefix candidate. Keeping it byte-identical
+and first in each prompt lets every node reuse the same cached KV state.</p>
+<table class="trace-table">
+  <thead>
+    <tr><th>Block hash</th><th>Nodes</th><th>Occurrences</th></tr>
+  </thead>
+  <tbody>
+    {% for b in shared_prompt_blocks %}
+    <tr>
+      <td><code>{{ b.hash }}</code></td>
+      <td>{{ b.node_ids|join(", ") }}</td>
+      <td>{{ b.occurrences }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

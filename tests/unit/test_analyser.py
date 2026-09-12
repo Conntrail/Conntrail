@@ -333,3 +333,93 @@ class TestCallNodeRetry:
             await self.analyser._call_node(broken_node, {"message": "hi"})
         assert calls["count"] == 1  # no retries attempted
         sleep_spy.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# _call_node cost/latency stats + analyse() aggregation
+# ---------------------------------------------------------------------------
+
+class TestCallNodeStats:
+    def setup_method(self):
+        self.analyser = DivergenceAnalyser()
+
+    @pytest.mark.asyncio
+    async def test_stats_capture_usage_latency_and_models(self):
+        from langchain_core.messages import HumanMessage
+
+        from conntrail.analyser import _CallStats
+        from tests.unit.test_cost import _UsageChatModel
+
+        model = _UsageChatModel()
+
+        async def llm_node(state):
+            await model.ainvoke([HumanMessage(content=state["message"])])
+            return {**state, "route": "general"}
+
+        stats = _CallStats()
+        await self.analyser._call_node(llm_node, {"message": "hi"}, stats=stats)
+        assert stats.usage is not None
+        assert stats.usage.input_tokens == 100
+        assert stats.usage.output_tokens == 7
+        assert stats.models == ["gpt-4o"]
+        assert stats.latency_ms > 0
+        assert stats.retries == 0
+
+    @pytest.mark.asyncio
+    async def test_stats_count_rate_limit_retries(self, mocker):
+        from conntrail.analyser import _CallStats
+
+        mocker.patch("conntrail.analyser.asyncio.sleep", new=mocker.AsyncMock())
+        calls = {"count": 0}
+
+        async def flaky_node(state):
+            calls["count"] += 1
+            if calls["count"] < 3:
+                raise RuntimeError("429 rate_limit exceeded")
+            return {**state, "route": "ok"}
+
+        stats = _CallStats()
+        await self.analyser._call_node(flaky_node, {"message": "hi"}, stats=stats)
+        assert stats.retries == 2
+
+    @pytest.mark.asyncio
+    async def test_stats_without_llm_calls_report_no_usage(self):
+        from conntrail.analyser import _CallStats
+
+        async def plain_node(state):
+            return {**state, "route": "x"}
+
+        stats = _CallStats()
+        await self.analyser._call_node(plain_node, {"message": "hi"}, stats=stats)
+        assert stats.usage is None
+        assert stats.latency_ms > 0
+
+
+class TestAnalyseCostAggregation:
+    @pytest.mark.asyncio
+    async def test_analyse_returns_aggregated_cost_stats(self):
+        from langchain_core.messages import HumanMessage
+
+        from tests.unit.test_cost import _UsageChatModel
+
+        model = _UsageChatModel()
+
+        async def llm_node(state):
+            await model.ainvoke([HumanMessage(content=state["message"])])
+            return {**state, "route": "general"}
+
+        result = await DivergenceAnalyser().analyse(
+            llm_node,
+            {"message": "hello"},
+            ContrastSet(similar="hey", neutral="greetings", opposite="goodbye"),
+            input_key="message",
+            route_key="route",
+        )
+        # 4 re-runs of a node whose single LLM call reports 100/7 tokens.
+        assert result.analysis_usage is not None
+        assert result.analysis_usage.input_tokens == 400
+        assert result.analysis_usage.output_tokens == 28
+        assert result.analysis_models == ["gpt-4o"]
+        assert result.analysis_latency_ms is not None
+        assert result.analysis_latency_ms > 0
+        assert result.retries == 0

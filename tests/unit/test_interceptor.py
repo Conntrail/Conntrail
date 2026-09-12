@@ -249,7 +249,7 @@ class TestNodeInterceptor:
         )
 
         # Stub out the analysis to return a known high-entropy result
-        async def _fast_analysis(input_state, original_output):
+        async def _fast_analysis(input_state, original_output, node_cost=None):
             from datetime import datetime
 
             from conntrail.contrast import ContrastSet
@@ -491,3 +491,132 @@ class TestNodeTimeout:
         output = await interceptor({"message": "hi"})
         assert output["route"] == "ok"
         assert exporter.records == []
+
+
+# ---------------------------------------------------------------------------
+# Cost telemetry (capture_cost on by default; error + happy paths)
+# ---------------------------------------------------------------------------
+
+class TestCostTelemetry:
+    async def test_error_record_stamps_latency_but_no_usage(self):
+        exporter = RecordingExporter()
+
+        async def broken_node(state):
+            raise ValueError("boom")
+
+        interceptor = NodeInterceptor(
+            broken_node,
+            node_id="broken",
+            config=ConntrailConfig(exporter=exporter, sample_rate=0.0),
+        )
+        with pytest.raises(ValueError, match="boom"):
+            await interceptor({"message": "x"})
+
+        assert len(exporter.records) == 1
+        record = exporter.records[0]
+        assert record.latency_ms is not None
+        assert record.latency_ms >= 0.0
+        assert record.token_usage is None  # no LLM calls observed before the raise
+        assert record.cost_usd is None
+        assert record.analysis_overhead is None
+        assert record.cost_findings is None
+
+    async def test_capture_cost_false_yields_no_cost_fields(self):
+        exporter = RecordingExporter()
+
+        async def broken_node(state):
+            raise ValueError("boom")
+
+        interceptor = NodeInterceptor(
+            broken_node,
+            node_id="broken",
+            config=ConntrailConfig(exporter=exporter, sample_rate=0.0, capture_cost=False),
+        )
+        with pytest.raises(ValueError, match="boom"):
+            await interceptor({"message": "x"})
+
+        record = exporter.records[0]
+        assert record.latency_ms is None
+        assert record.token_usage is None
+        assert record.cost_usd is None
+
+    async def test_record_carries_full_cost_telemetry(self, monkeypatch):
+        from langchain_core.messages import HumanMessage
+
+        from conntrail.analyser import AnalysisResult
+        from conntrail.contrast import ContrastSet
+        from conntrail.cost import TokenUsage
+        from tests.unit.test_cost import _UsageChatModel
+
+        model = _UsageChatModel()
+
+        async def llm_node(state):
+            await model.ainvoke([HumanMessage(content=state["message"])])
+            return {**state, "route": "general"}
+
+        class _FakeGen:
+            last_usage = TokenUsage(input_tokens=600, output_tokens=90)
+            last_model = "claude-haiku-4-5-20251001"
+
+            def __init__(self, *args, **kwargs):
+                pass
+
+            async def generate(self, text):
+                return ContrastSet(similar="s", neutral="n", opposite="o")
+
+        class _FakeAnalyser:
+            async def analyse(self, node_fn, input_state, contrasts, input_key, route_key):
+                await node_fn(input_state)  # one observable LLM call
+                return AnalysisResult(
+                    original_route="general",
+                    contrast_routes={"similar": "general", "neutral": "urgent", "opposite": "urgent"},
+                    entropy_score=0.5,
+                    attribution_dimension="urgency/sentiment",
+                    counterfactual_route="urgent",
+                    raw_outputs={},
+                    analysis_usage=TokenUsage(input_tokens=400, output_tokens=28),
+                    analysis_models=["gpt-4o"],
+                    analysis_latency_ms=250.0,
+                    retries=0,
+                )
+
+        monkeypatch.setattr("conntrail.contrast.ContrastGenerator", _FakeGen)
+        monkeypatch.setattr("conntrail.analyser.DivergenceAnalyser", _FakeAnalyser)
+        monkeypatch.setattr("conntrail.utils.providers.get_chat_model", lambda *a, **k: None)
+
+        exporter = RecordingExporter()
+        config = ConntrailConfig(
+            exporter=exporter,
+            sample_rate=1.0,
+            async_mode=False,
+            entropy_alert_threshold=0.0,
+        )
+        interceptor = NodeInterceptor(
+            llm_node, node_id="cost_node", config=config, input_key="message", route_key="route"
+        )
+        record = await interceptor({"message": "hello", "route": None})
+        assert record["route"] == "general"  # __call__ returns the node output
+        assert len(exporter.records) == 1
+        record = exporter.records[0]
+
+        # Hot-path telemetry: the fake model's 100/7 tokens on gpt-4o.
+        assert record.token_usage["input_tokens"] == 100
+        assert record.token_usage["output_tokens"] == 7
+        assert record.token_usage["llm_call_count"] == 1
+        assert record.token_usage["models"] == ["gpt-4o"]
+        assert record.cost_usd == pytest.approx((100 * 2.5 + 7 * 10) / 1e6)
+        assert record.latency_ms is not None
+        assert record.latency_ms >= 0.0
+
+        # Observer overhead: 4 re-runs (400/28 on gpt-4o) + contrast (600/90 haiku).
+        assert record.analysis_overhead["input_tokens"] == 1000
+        assert record.analysis_overhead["output_tokens"] == 118
+        assert record.analysis_overhead["total_tokens"] == 1118
+        assert record.analysis_overhead["retries"] == 0
+        expected_overhead = (400 * 2.5 + 28 * 10) / 1e6 + (600 * 1.0 + 90 * 5) / 1e6
+        assert record.analysis_overhead["cost_usd"] == pytest.approx(expected_overhead)
+
+        # Findings derived from the telemetry (overhead dominates the node).
+        assert record.cost_findings
+        dims = {f["dimension"] for f in record.cost_findings}
+        assert "observer_overhead" in dims

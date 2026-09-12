@@ -1,8 +1,8 @@
 """
 Provider resolution — maps model strings to LangChain chat model instances.
 
-Supports Groq, Anthropic, OpenAI, OpenRouter, and local OpenAI-compatible
-servers (Ollama, llama.cpp, vLLM, Unsloth Studio, etc.).
+Supports Groq, Anthropic, OpenAI, Google Gemini, OpenRouter, and local
+OpenAI-compatible servers (Unsloth Studio, Ollama, llama.cpp, vLLM, ...).
 
 Local model usage:
     Pass model="local/<name>" or model="local" to route to the local server.
@@ -22,6 +22,15 @@ OpenRouter usage:
     Pass model="openrouter/<vendor>/<model>" (OpenRouter's own naming, e.g.
     "openrouter/anthropic/claude-3-haiku") or bare "openrouter" to use the
     configured fallback model. Requires OPENROUTER_API_KEY.
+
+Token-usage reporting (cost telemetry) is per-provider transport:
+    - OpenAI, OpenRouter, and every OpenAI-compatible local server stream or
+      report usage only when requested — stream_usage=True is set on all
+      ChatOpenAI-based clients (langchain-openai auto-enables it ONLY for the
+      default api.openai.com base URL, so custom base URLs need it explicitly;
+      Ollama /v1, llama.cpp, and Unsloth honor stream_options.include_usage).
+    - Anthropic and Groq report usage natively in every response.
+    - Gemini (langchain-google-genai) populates usage_metadata natively.
 """
 from __future__ import annotations
 
@@ -114,6 +123,7 @@ _PREFIX_MAP = {
     "o1": "openai",
     "o3": "openai",
     "o4": "openai",
+    "gemini": "google",
 }
 
 # Cheapest model per provider (used when falling back)
@@ -121,6 +131,7 @@ _FALLBACK_MODELS = {
     "groq": "llama-3.1-8b-instant",
     "anthropic": "claude-haiku-4-5-20251001",
     "openai": "gpt-4o-mini",
+    "google": "gemini-2.0-flash",
     "openrouter": "openai/gpt-4o-mini",
     "local": _LOCAL_MODEL_NAME,
 }
@@ -129,6 +140,7 @@ _KEY_ENV = {
     "groq": "GROQ_API_KEY",
     "anthropic": "ANTHROPIC_API_KEY",
     "openai": "OPENAI_API_KEY",
+    "google": "GOOGLE_API_KEY",
     "openrouter": "OPENROUTER_API_KEY",
 }
 
@@ -146,12 +158,12 @@ def _infer_provider(model: str) -> str | None:
 
 def _available_provider() -> str:
     """Return the first provider with an available API key."""
-    for provider in ("groq", "anthropic", "openai", "openrouter"):
+    for provider in ("groq", "anthropic", "openai", "google", "openrouter"):
         if os.getenv(_KEY_ENV[provider]):
             return provider
     raise OSError(
         "No LLM API key found. Set GROQ_API_KEY, ANTHROPIC_API_KEY, OPENAI_API_KEY, "
-        "or OPENROUTER_API_KEY."
+        "GOOGLE_API_KEY, or OPENROUTER_API_KEY."
     )
 
 
@@ -175,8 +187,9 @@ def get_chat_model(
     provider and its default cheap model.
 
     Args:
-        model: Model ID string. Use "local/qwen3" for local inference, or
-            "openrouter/anthropic/claude-3-haiku" for OpenRouter.
+        model: Model ID string. Use "local/qwen3" for local inference,
+            "openrouter/anthropic/claude-3-haiku" for OpenRouter, or e.g.
+            "gemini-2.0-flash" for Gemini (GOOGLE_API_KEY / GEMINI_API_KEY).
         max_tokens: Max tokens for the response.
         temperature: Sampling temperature.
 
@@ -209,11 +222,18 @@ def get_chat_model(
 def _build_model(provider: str, model: str, *, max_tokens: int, temperature: float = 0.0) -> BaseChatModel:
     if provider == "local":
         from langchain_openai import ChatOpenAI
-        kwargs: dict = {}
+        # stream_usage=True on every ChatOpenAI-based client: these servers
+        # (Unsloth, llama.cpp, Ollama /v1, vLLM) stream or report usage only
+        # when asked, and langchain-openai auto-enables usage only for the
+        # default api.openai.com base URL. Without it the final usage chunk
+        # is dropped and cost telemetry sees nothing.
+        kwargs: dict = {"stream_usage": True}
         if _LOCAL_AUTH_MODE == "jwt":
             # Unsloth Studio always returns SSE regardless of the stream flag,
-            # and disabling Qwen3's chain-of-thought avoids wasting max_tokens on it.
-            kwargs = {"streaming": True, "extra_body": {"enable_thinking": False}}
+            # and disabling gemma/qwen chain-of-thought avoids wasting
+            # max_tokens on it.
+            kwargs["streaming"] = True
+            kwargs["extra_body"] = {"enable_thinking": False}
         return ChatOpenAI(
             model=model,
             max_tokens=max_tokens,
@@ -231,6 +251,7 @@ def _build_model(provider: str, model: str, *, max_tokens: int, temperature: flo
             temperature=temperature,
             base_url=_OPENROUTER_BASE_URL,
             api_key=os.getenv("OPENROUTER_API_KEY", ""),
+            stream_usage=True,
         )
 
     if provider == "groq":
@@ -243,6 +264,20 @@ def _build_model(provider: str, model: str, *, max_tokens: int, temperature: flo
 
     if provider == "openai":
         from langchain_openai import ChatOpenAI
-        return ChatOpenAI(model=model, max_tokens=max_tokens, temperature=temperature)
+        return ChatOpenAI(
+            model=model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            stream_usage=True,
+        )
+
+    if provider == "google":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        return ChatGoogleGenerativeAI(
+            model=model,
+            max_output_tokens=max_tokens,
+            temperature=temperature,
+            google_api_key=os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY"),
+        )
 
     raise ValueError(f"Unknown provider: {provider!r}")

@@ -35,6 +35,12 @@ class TraceRecord:
     status: Literal["ok", "error"] = "ok"
     error_type: str | None = None
     error_message: str | None = None
+    # --- cost telemetry (optional; None on legacy/uncaptured traces) ---
+    token_usage: dict[str, Any] | None = None
+    cost_usd: float | None = None
+    latency_ms: float | None = None
+    analysis_overhead: dict[str, Any] | None = None
+    cost_findings: list[dict[str, Any]] | None = None
 
     @classmethod
     def make_id(cls) -> str:
@@ -62,6 +68,11 @@ class TraceRecord:
             "status": self.status,
             "error_type": self.error_type,
             "error_message": self.error_message,
+            "token_usage": self.token_usage,
+            "cost_usd": self.cost_usd,
+            "latency_ms": self.latency_ms,
+            "analysis_overhead": self.analysis_overhead,
+            "cost_findings": self.cost_findings,
         }
 
     @classmethod
@@ -85,6 +96,11 @@ class TraceRecord:
             status=data.get("status", "ok"),
             error_type=data.get("error_type"),
             error_message=data.get("error_message"),
+            token_usage=data.get("token_usage"),
+            cost_usd=data.get("cost_usd"),
+            latency_ms=data.get("latency_ms"),
+            analysis_overhead=data.get("analysis_overhead"),
+            cost_findings=data.get("cost_findings"),
         )
 
     @staticmethod

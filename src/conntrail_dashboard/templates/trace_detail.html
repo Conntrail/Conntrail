@@ -23,6 +23,62 @@
 <h2>Summary</h2>
 <p>{{ trace.plain_language_summary }}</p>
 
+{% set token_usage = trace.get("token_usage") %}
+{% set cost_usd = trace.get("cost_usd") %}
+{% set latency_ms = trace.get("latency_ms") %}
+{% set overhead = trace.get("analysis_overhead") %}
+{% set findings = trace.get("cost_findings") %}
+{% if token_usage or cost_usd is not none or latency_ms is not none %}
+<h2>Cost</h2>
+<dl class="trace-meta">
+  {% if token_usage %}
+  <dt>LLM calls</dt><dd>{{ token_usage.llm_call_count }}</dd>
+  <dt>Models</dt><dd>{{ token_usage.models|join(", ") or "—" }}</dd>
+  <dt>Input tokens</dt>
+  <dd>{{ token_usage.input_tokens }}{% if token_usage.cached_input_tokens %} ({{ token_usage.cached_input_tokens }} served from cache){% endif %}</dd>
+  {% if token_usage.cache_write_tokens %}
+  <dt>Cache writes</dt><dd>{{ token_usage.cache_write_tokens }} tokens written{% if not token_usage.cached_input_tokens %}, never read this trace{% endif %}</dd>
+  {% endif %}
+  <dt>Output tokens</dt><dd>{{ token_usage.output_tokens }}</dd>
+  {% endif %}
+  {% if cost_usd is not none %}
+  <dt>Estimated cost</dt><dd>${{ "%.6f"|format(cost_usd) }}</dd>
+  {% endif %}
+  {% if latency_ms is not none %}
+  <dt>Latency</dt><dd>{{ "%.1f ms"|format(latency_ms) }}</dd>
+  {% endif %}
+</dl>
+{% endif %}
+
+{% if overhead %}
+<h2>Analysis overhead (Conntrail's own cost)</h2>
+<dl class="trace-meta">
+  <dt>Re-run tokens</dt><dd>{{ overhead.total_tokens }} ({{ overhead.input_tokens }} in / {{ overhead.output_tokens }} out)</dd>
+  {% if overhead.retries %}
+  <dt>Rate-limit retries</dt><dd>{{ overhead.retries }}</dd>
+  {% endif %}
+  {% if overhead.latency_ms is not none %}
+  <dt>Re-run latency</dt><dd>{{ "%.1f ms"|format(overhead.latency_ms) }}</dd>
+  {% endif %}
+  {% if overhead.cost_usd is not none %}
+  <dt>Overhead cost</dt><dd>${{ "%.6f"|format(overhead.cost_usd) }}</dd>
+  {% endif %}
+</dl>
+{% endif %}
+
+{% if findings %}
+<h2>Cost findings</h2>
+<ul class="cost-findings">
+  {% for f in findings %}
+  <li>
+    <span class="badge badge-{{ "fragile" if f.severity == "warning" else "confident" }}">{{ f.severity }}</span>
+    <strong>{{ f.dimension }}</strong> — {{ f.evidence }}
+    <br><em>{{ f.recommendation }}</em>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
 <h2>Original input</h2>
 <pre>{{ trace.original_input }}</pre>
 

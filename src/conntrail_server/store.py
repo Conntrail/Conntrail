@@ -33,9 +33,14 @@ _COLUMNS = (
     "error_type",
     "error_message",
     "failure_category",
+    "token_usage",
+    "cost_usd",
+    "latency_ms",
+    "analysis_overhead",
+    "cost_findings",
 )
 
-_JSON_COLUMNS = {"raw_contrasts", "raw_outputs"}
+_JSON_COLUMNS = {"raw_contrasts", "raw_outputs", "token_usage", "analysis_overhead", "cost_findings"}
 
 _GEPA_COLUMNS = (
     "attempt_id",
@@ -43,9 +48,12 @@ _GEPA_COLUMNS = (
     "prompt_candidate",
     "scalar_score",
     "traces",
+    "token_usage",
+    "cost_usd",
+    "latency_ms",
 )
 
-_GEPA_JSON_COLUMNS = {"traces"}
+_GEPA_JSON_COLUMNS = {"traces", "token_usage"}
 
 
 class TraceStore:
@@ -121,7 +129,10 @@ class TraceStore:
     def _row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
         data = dict(row)
         for col in _JSON_COLUMNS:
-            data[col] = json.loads(data[col])
+            # Cost columns are nullable (legacy rows store NULL, new rows may
+            # store JSON "null") — decode only real JSON strings.
+            if data.get(col) is not None:
+                data[col] = json.loads(data[col])
         return data
 
     # -- GEPA attempts (G3) --------------------------------------------------
@@ -160,5 +171,114 @@ class TraceStore:
     def _gepa_row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
         data = dict(row)
         for col in _GEPA_JSON_COLUMNS:
-            data[col] = json.loads(data[col])
+            if data.get(col) is not None:
+                data[col] = json.loads(data[col])
         return data
+
+    # -- cost summary (aggregated cost telemetry per node) -------------------
+
+    def cost_summary(self, *, limit: int = 1000) -> dict[str, Any]:
+        """Aggregate cost telemetry per node over the most recent traces.
+
+        Returns {"nodes": [...], "shared_prompt_blocks": [...]}:
+          - nodes: per node_id — trace/LLM-call counts, token totals, cache
+            hit ratio, total/mean cost, mean latency, cost-warning count.
+          - shared_prompt_blocks: instruction-block hashes observed on 2+
+            DIFFERENT nodes — cross-node repeated instructions, the shared
+            cached-prefix candidates.
+
+        Sampled over the most recent ``limit`` traces (limit-based, no count
+        endpoint — same caveat as the dashboard failure view).
+        """
+        cur = self._conn.execute(
+            "SELECT node_id, token_usage, cost_usd, latency_ms, cost_findings "
+            "FROM traces ORDER BY timestamp DESC LIMIT ?",
+            (limit,),
+        )
+        nodes: dict[str, dict[str, Any]] = {}
+        hash_node_ids: dict[str, set[str]] = {}
+        hash_occurrences: dict[str, int] = {}
+
+        for row in cur.fetchall():
+            node_id = row["node_id"]
+            agg = nodes.setdefault(
+                node_id,
+                {
+                    "node_id": node_id,
+                    "trace_count": 0,
+                    "llm_call_count": 0,
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "cached_input_tokens": 0,
+                    "cache_write_tokens": 0,
+                    "total_cost_usd": 0.0,
+                    "cost_reported_traces": 0,
+                    "latency_ms_total": 0.0,
+                    "latency_reported_traces": 0,
+                    "cost_warning_count": 0,
+                },
+            )
+            agg["trace_count"] += 1
+
+            cost = row["cost_usd"]
+            if cost is not None:
+                agg["total_cost_usd"] += cost
+                agg["cost_reported_traces"] += 1
+            latency = row["latency_ms"]
+            if latency is not None:
+                agg["latency_ms_total"] += latency
+                agg["latency_reported_traces"] += 1
+
+            usage = row["token_usage"]
+            if usage is not None:
+                usage = json.loads(usage)
+            if isinstance(usage, dict):
+                agg["llm_call_count"] += usage.get("llm_call_count") or 0
+                agg["input_tokens"] += usage.get("input_tokens") or 0
+                agg["output_tokens"] += usage.get("output_tokens") or 0
+                agg["cached_input_tokens"] += usage.get("cached_input_tokens") or 0
+                agg["cache_write_tokens"] += usage.get("cache_write_tokens") or 0
+                for h in usage.get("prompt_hashes") or []:
+                    if isinstance(h, str):
+                        hash_node_ids.setdefault(h, set()).add(node_id)
+                        hash_occurrences[h] = hash_occurrences.get(h, 0) + 1
+
+            findings = row["cost_findings"]
+            if findings is not None:
+                findings = json.loads(findings)
+            if isinstance(findings, list):
+                agg["cost_warning_count"] += sum(
+                    1
+                    for f in findings
+                    if isinstance(f, dict) and f.get("severity") == "warning"
+                )
+
+        for agg in nodes.values():
+            agg["total_cost_usd"] = round(agg["total_cost_usd"], 6)
+            agg["mean_cost_usd"] = (
+                round(agg["total_cost_usd"] / agg["cost_reported_traces"], 6)
+                if agg["cost_reported_traces"]
+                else None
+            )
+            agg["mean_latency_ms"] = (
+                round(agg["latency_ms_total"] / agg["latency_reported_traces"], 1)
+                if agg["latency_reported_traces"]
+                else None
+            )
+            agg["cache_hit_ratio"] = (
+                round(agg["cached_input_tokens"] / agg["input_tokens"], 3)
+                if agg["input_tokens"]
+                else None
+            )
+            del agg["cost_reported_traces"]
+            del agg["latency_reported_traces"]
+            del agg["latency_ms_total"]
+
+        shared = [
+            {"hash": h, "node_ids": sorted(node_ids), "occurrences": hash_occurrences[h]}
+            for h, node_ids in hash_node_ids.items()
+            if len(node_ids) >= 2
+        ]
+        shared.sort(key=lambda b: b["occurrences"], reverse=True)
+
+        return {"nodes": list(nodes.values()), "shared_prompt_blocks": shared[:20]}
