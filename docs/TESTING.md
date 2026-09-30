@@ -132,9 +132,11 @@ plumbing and its verbatim strategy system prompt — answers which priority it
 follows (`win/block/fork/advance/center/disrupt`), and that node is wrapped
 in `trace_node()`. Result: Conntrail measures whether the agent's strategic
 route flips under perturbed situation descriptions, plus an error-path trace
-(node raises mid-decision). The harness lives outside both repos (nothing in
-the tournament project is modified); re-create from §5 of this doc or ask
-for the script.
+(node raises mid-decision). The harness is committed at
+`examples/sequence/trace_sequence_agent.py` (see its README); it runs the
+project-native flavor, a Conntrail-transport flavor with full cost capture,
+and the error path. `./demo.sh trace` runs it against the local collector.
+`./demo.sh all` additionally runs the weak-seed GEPA comparison.
 
 ## 6. Verified results (last full run)
 

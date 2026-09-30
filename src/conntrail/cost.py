@@ -59,6 +59,9 @@ _MODEL_PRICES: dict[str, tuple[float, float, float]] = {
     "o4-mini": (1.10, 0.55, 4.40),
     "o3": (2.00, 1.00, 8.00),
     "o1": (15.00, 7.50, 60.00),
+    # DeepSeek (OpenRouter pricing; v4.1-flash is the project default)
+    "deepseek-v4.1-flash": (0.30, 0.03, 1.20),
+    "deepseek": (0.28, 0.028, 0.42),
     # Google Gemini (flash-family default; explicit 2.5-pro entry)
     "gemini-2.5-pro": (1.25, 0.31, 10.00),
     "gemini": (0.10, 0.025, 0.40),
@@ -216,6 +219,16 @@ def normalize_model_name(model: str) -> str:
     return name
 
 
+def _price_match_key(name: str) -> str:
+    """Treat '.' and '-' equivalently for price matching.
+
+    Model vendors disagree on separators: OpenRouter slugs use dots
+    ("anthropic/claude-3.5-haiku") while the table uses hyphens
+    ("claude-3-5-haiku"). Normalizing both sides keeps them matching.
+    """
+    return name.replace(".", "-")
+
+
 def resolve_price(
     model: str,
     price_overrides: Mapping[str, tuple[float, float, float]] | None = None,
@@ -230,11 +243,12 @@ def resolve_price(
         return _LOCAL_PRICE
     if not name:
         return _DEFAULT_PRICE
+    match_name = _price_match_key(name)
     for table in (price_overrides, _MODEL_PRICES):
         if not table:
             continue
         for prefix in sorted(table, key=len, reverse=True):
-            if name.startswith(prefix):
+            if match_name.startswith(_price_match_key(prefix)):
                 price = table[prefix]
                 return (float(price[0]), float(price[1]), float(price[2]))
     return _DEFAULT_PRICE

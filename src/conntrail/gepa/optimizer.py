@@ -46,9 +46,12 @@ class CPEGEPAOptimizer:
         gepa_kwargs: dict | None = None,
         on_attempt_scored: Callable | None = None,
         cost_weight: float = 0.1,
+        valset: list | None = None,
+        output_field: str | None = None,
     ) -> None:
         self.student = student
         self.trainset = trainset
+        self.valset = valset
         self._task_metric = task_metric_fn
         self._base_config = base_conntrail_config
         self._gepa_kwargs = gepa_kwargs or {}
@@ -57,7 +60,11 @@ class CPEGEPAOptimizer:
         self.collector = TraceCollector()
         self.conntrail_config = self.collector.make_config(base_conntrail_config)
         self.feedback_fn = CPEFeedbackFunction(
-            self.collector, task_metric_fn, on_attempt_scored, cost_weight=cost_weight
+            self.collector,
+            task_metric_fn,
+            on_attempt_scored,
+            cost_weight=cost_weight,
+            output_field=output_field,
         )
 
     def compile(self):
@@ -73,7 +80,9 @@ class CPEGEPAOptimizer:
             metric=self.feedback_fn,
             **self._gepa_kwargs,
         )
-        return gepa.compile(self.student, trainset=self.trainset)
+        # Pass a held-out valset when given: without one dspy reuses the
+        # trainset and the reported score is train-fit, not generalization.
+        return gepa.compile(self.student, trainset=self.trainset, valset=self.valset)
 
     @property
     def attempt_records(self):

@@ -230,7 +230,11 @@ class NodeInterceptor:
             logger.debug("conntrail: no input text found in state for node %r", self.node_id)
             return None
 
-        llm = get_chat_model(self.config.contrast_model, max_tokens=512)
+        # Generous cap + reasoning suppression: reasoning models spend most of a
+        # small budget thinking and return empty content, which fails contrast
+        # parsing. max_tokens is a cap, not a target — non-reasoning models still
+        # answer in a few tokens.
+        llm = get_chat_model(self.config.contrast_model, max_tokens=2048, disable_reasoning=True)
         gen = ContrastGenerator(llm=llm)
         contrasts = await gen.generate(input_text)
 

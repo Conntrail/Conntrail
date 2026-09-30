@@ -20,7 +20,7 @@ Local model usage:
 
 OpenRouter usage:
     Pass model="openrouter/<vendor>/<model>" (OpenRouter's own naming, e.g.
-    "openrouter/anthropic/claude-3-haiku") or bare "openrouter" to use the
+    "openrouter/deepseek/deepseek-v4.1-flash") or bare "openrouter" to use the
     configured fallback model. Requires OPENROUTER_API_KEY.
 
 Token-usage reporting (cost telemetry) is per-provider transport:
@@ -47,6 +47,12 @@ _LOCAL_USERNAME = os.getenv("LOCAL_USERNAME", "")
 _LOCAL_PASSWORD = os.getenv("LOCAL_PASSWORD", "")
 
 _OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+
+# Project-wide default model. An OpenRouter slug, so any configured provider
+# key can resolve it — get_chat_model() falls back to the first available
+# provider when OPENROUTER_API_KEY itself is unset.
+DEFAULT_MODEL = "openrouter/deepseek/deepseek-v4.1-flash"
+DEFAULT_CONTRAST_MODEL = DEFAULT_MODEL
 
 
 def _get_local_token() -> str:
@@ -132,7 +138,7 @@ _FALLBACK_MODELS = {
     "anthropic": "claude-haiku-4-5-20251001",
     "openai": "gpt-4o-mini",
     "google": "gemini-2.0-flash",
-    "openrouter": "openai/gpt-4o-mini",
+    "openrouter": "deepseek/deepseek-v4.1-flash",
     "local": _LOCAL_MODEL_NAME,
 }
 
@@ -172,6 +178,7 @@ def get_chat_model(
     *,
     max_tokens: int = 512,
     temperature: float = 0.0,
+    disable_reasoning: bool = False,
 ) -> BaseChatModel:
     """
     Resolve a model string to a LangChain BaseChatModel instance.
@@ -188,10 +195,14 @@ def get_chat_model(
 
     Args:
         model: Model ID string. Use "local/qwen3" for local inference,
-            "openrouter/anthropic/claude-3-haiku" for OpenRouter, or e.g.
+            "openrouter/deepseek/deepseek-v4.1-flash" for OpenRouter, or e.g.
             "gemini-2.0-flash" for Gemini (GOOGLE_API_KEY / GEMINI_API_KEY).
         max_tokens: Max tokens for the response.
         temperature: Sampling temperature.
+        disable_reasoning: Ask the provider to skip chain-of-thought where it
+            supports it (OpenRouter's unified `reasoning` control; local JWT
+            servers already disable it). Reasoning models otherwise spend small
+            token budgets thinking and return empty content.
 
     Returns:
         A configured LangChain BaseChatModel.
@@ -201,12 +212,18 @@ def get_chat_model(
     if inferred == "local":
         # Extract model name from "local/<name>" or fall back to LOCAL_MODEL_NAME
         local_name = model.split("/", 1)[1] if "/" in model else _LOCAL_MODEL_NAME
-        return _build_model("local", local_name, max_tokens=max_tokens, temperature=temperature)
+        return _build_model(
+            "local", local_name, max_tokens=max_tokens, temperature=temperature,
+            disable_reasoning=disable_reasoning,
+        )
 
     if inferred == "openrouter":
         # Extract model name from "openrouter/<vendor>/<model>" or use the fallback
         or_name = model.split("/", 1)[1] if "/" in model else _FALLBACK_MODELS["openrouter"]
-        return _build_model("openrouter", or_name, max_tokens=max_tokens, temperature=temperature)
+        return _build_model(
+            "openrouter", or_name, max_tokens=max_tokens, temperature=temperature,
+            disable_reasoning=disable_reasoning,
+        )
 
     # Check if inferred cloud provider's key is available
     if inferred and os.getenv(_KEY_ENV[inferred]):
@@ -216,10 +233,20 @@ def get_chat_model(
         resolved_provider = _available_provider()
         resolved_model = _FALLBACK_MODELS[resolved_provider]
 
-    return _build_model(resolved_provider, resolved_model, max_tokens=max_tokens, temperature=temperature)
+    return _build_model(
+        resolved_provider, resolved_model, max_tokens=max_tokens, temperature=temperature,
+        disable_reasoning=disable_reasoning,
+    )
 
 
-def _build_model(provider: str, model: str, *, max_tokens: int, temperature: float = 0.0) -> BaseChatModel:
+def _build_model(
+    provider: str,
+    model: str,
+    *,
+    max_tokens: int,
+    temperature: float = 0.0,
+    disable_reasoning: bool = False,
+) -> BaseChatModel:
     if provider == "local":
         from langchain_openai import ChatOpenAI
         # stream_usage=True on every ChatOpenAI-based client: these servers
@@ -245,13 +272,19 @@ def _build_model(provider: str, model: str, *, max_tokens: int, temperature: flo
 
     if provider == "openrouter":
         from langchain_openai import ChatOpenAI
+        kwargs = {"stream_usage": True}
+        if disable_reasoning:
+            # OpenRouter's unified reasoning control — reasoning models
+            # otherwise burn the whole max_tokens budget thinking and return
+            # empty content, which breaks contrast generation.
+            kwargs["extra_body"] = {"reasoning": {"enabled": False}}
         return ChatOpenAI(
             model=model,
             max_tokens=max_tokens,
             temperature=temperature,
             base_url=_OPENROUTER_BASE_URL,
             api_key=os.getenv("OPENROUTER_API_KEY", ""),
-            stream_usage=True,
+            **kwargs,
         )
 
     if provider == "groq":

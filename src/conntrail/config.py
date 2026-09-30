@@ -7,6 +7,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 
 from conntrail.exporters.base import BaseExporter
+from conntrail.utils.providers import DEFAULT_CONTRAST_MODEL
 
 
 @dataclass
@@ -45,7 +46,7 @@ class ConntrailConfig:
             CONNTRAIL_PRICE_OVERRIDES env var (JSON) when unset.
     """
 
-    contrast_model: str = "claude-haiku-4-5-20251001"
+    contrast_model: str = DEFAULT_CONTRAST_MODEL
     sample_rate: float = 1.0
     async_mode: bool = True
     exporter: BaseExporter | None = None

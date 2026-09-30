@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 _CLOUD_KEY_ENV = ("GROQ_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY")
-_DEFAULT_CONTRAST_MODEL = "claude-haiku-4-5-20251001"
+_DEFAULT_CONTRAST_MODEL = "openrouter/deepseek/deepseek-v4.1-flash"
 
 
 def live_llm_available() -> bool:

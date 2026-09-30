@@ -54,7 +54,7 @@ def _make_interceptor(node_fn=None, input_key="message", route_key="route", **co
 class TestConntrailConfig:
     def test_default_values(self):
         config = ConntrailConfig()
-        assert config.contrast_model == "claude-haiku-4-5-20251001"
+        assert config.contrast_model == "openrouter/deepseek/deepseek-v4.1-flash"
         assert config.sample_rate == 1.0
         assert config.async_mode is True
         assert config.exporter is None

@@ -45,6 +45,44 @@ def _attempt_tokens(attempt: PromptAttemptRecord) -> int | None:
     return (input_tokens or 0) + (output_tokens or 0)
 
 
+def _correctness_note(gold, pred, output_field: str | None) -> str | None:
+    """A corrective line naming the expected label for a wrong prediction.
+
+    GEPA's reflection LM sees the feedback string (and the example's inputs and
+    generated outputs) — but not the gold label. Without this the proposer can
+    only chase *stability*, never correctness, so it cannot learn a task's rules
+    (e.g. a support policy). One line per wrong case is enough for it to infer
+    the mapping.
+    """
+    if output_field is None or gold is None or pred is None:
+        return None
+    try:
+        expected = getattr(gold, output_field)
+        generated = getattr(pred, output_field)
+    except AttributeError:
+        return None
+    if expected is None or generated == expected:
+        return None
+    input_text = ""
+    try:
+        inputs = gold.inputs()
+        first = next(iter(inputs.values()), None)
+        if isinstance(first, str):
+            input_text = first[:200]
+    except Exception:  # noqa: BLE001 - input extraction is best-effort
+        pass
+    if input_text:
+        return (
+            f"Correctness: for input {input_text!r} the expected answer is "
+            f"{expected!r}, but the prompt produced {generated!r}. The prompt "
+            "must yield the expected answer for cases like this."
+        )
+    return (
+        f"Correctness: the expected answer is {expected!r}, but the prompt "
+        f"produced {generated!r}."
+    )
+
+
 def cpe_feedback(attempt: PromptAttemptRecord, baseline: PromptAttemptRecord | None = None) -> str:
     """
     Converts a PromptAttemptRecord into a natural-language feedback string
@@ -160,6 +198,11 @@ class CPEFeedbackFunction:
         cost_weight: Lambda for the cost penalty above (default 0.1: a
                         candidate costing 2x the baseline loses 0.1 score).
                         0 disables cost folding (pure task/stability scoring).
+        output_field: Name of the Prediction/Example field holding the decision
+                        (e.g. "category", "resolution"). When given with a task
+                        metric, the feedback text names the *expected* label for
+                        wrong cases — without it the reflection LM only sees
+                        entropy/stability advice and cannot learn the target.
     """
 
     def __init__(
@@ -168,6 +211,7 @@ class CPEFeedbackFunction:
         task_metric_fn=None,
         on_attempt_scored=None,
         cost_weight: float = _DEFAULT_COST_WEIGHT,
+        output_field: str | None = None,
     ) -> None:
         if cost_weight < 0:
             raise ValueError(f"cost_weight must be >= 0, got {cost_weight}")
@@ -175,6 +219,7 @@ class CPEFeedbackFunction:
         self._task_metric = task_metric_fn
         self._on_attempt_scored = on_attempt_scored
         self._cost_weight = float(cost_weight)
+        self._output_field = output_field
 
     def __call__(self, gold, pred, trace=None, pred_name=None, pred_trace=None, program_trace=None):
         attempts = self._collector.all_attempts
@@ -205,6 +250,10 @@ class CPEFeedbackFunction:
 
         score = self._apply_cost_weight(latest, baseline, base_score)
         feedback = cpe_feedback(latest, baseline=baseline)
+        if self._task_metric is not None:
+            note = _correctness_note(gold, pred, self._output_field)
+            if note:
+                feedback = f"{feedback}\n{note}"
         return self._result(score, feedback, attempt=latest)
 
     def _apply_cost_weight(

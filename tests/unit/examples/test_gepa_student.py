@@ -72,3 +72,29 @@ def test_trainset_examples_have_message_as_input_and_a_valid_expected_category()
     for example in TRAINSET:
         assert example.inputs().toDict().keys() == {"message"}
         assert example.category in VALID_CATEGORIES
+
+
+def test_trainset_is_large_and_balanced_enough_for_a_meaningful_holdout():
+    """A valset drawn from a handful of examples gives a coin-flip score."""
+    from collections import Counter
+
+    assert len(TRAINSET) >= 40
+    messages = [ex.message for ex in TRAINSET]
+    assert len(set(messages)) == len(messages), "duplicate messages in trainset"
+    counts = Counter(ex.category for ex in TRAINSET)
+    assert set(counts) == set(VALID_CATEGORIES)
+    assert min(counts.values()) >= 8, f"category imbalance: {dict(counts)}"
+
+
+def test_default_instructions_describe_the_categories():
+    router = CustomerSupportRouter()
+    instructions = router.classify.signature.instructions
+    for category in VALID_CATEGORIES:
+        assert category in instructions
+
+
+def test_custom_instructions_override_the_signature_default():
+    """Weak-seed demo mode replaces the classifier's initial prompt."""
+    router = CustomerSupportRouter(instructions="Just write a friendly reply.")
+    assert router.classify.signature.instructions == "Just write a friendly reply."
+    assert "refund" not in router.classify.signature.instructions

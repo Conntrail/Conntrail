@@ -49,9 +49,9 @@ class TestGEPALiveRun:
 
     def test_compile_produces_real_attempts(self):
         student_model = _model_from_env(
-            "CONNTRAIL_GEPA_STUDENT_MODEL", "claude-haiku-4-5-20251001"
+            "CONNTRAIL_GEPA_STUDENT_MODEL", "openrouter/deepseek/deepseek-v4.1-flash"
         )
-        reflection_model = _model_from_env("CONNTRAIL_GEPA_REFLECTION_MODEL", "claude-opus-5")
+        reflection_model = _model_from_env("CONNTRAIL_GEPA_REFLECTION_MODEL", "openrouter/deepseek/deepseek-v4.1-flash")
         api_key = os.environ.get("ANTHROPIC_API_KEY")
 
         # Small on purpose — this is a correctness run, not a full optimization.

@@ -125,8 +125,25 @@ def test_compile_calls_dspy_gepa(mock_dspy):
         metric=opt.feedback_fn,
         num_iterations=5,
     )
-    mock_gepa_instance.compile.assert_called_once_with(opt.student, trainset=opt.trainset)
+    mock_gepa_instance.compile.assert_called_once_with(
+        opt.student, trainset=opt.trainset, valset=None
+    )
     assert result is mock_gepa_instance.compile.return_value
+
+
+def test_compile_threads_a_held_out_valset(mock_dspy):
+    """Without a distinct valset dspy reuses the trainset, so the reported
+    score is train-fit — the optimizer must pass one through when given."""
+    mock_gepa_instance = MagicMock()
+    mock_dspy.GEPA.return_value = mock_gepa_instance
+
+    valset = [{"input": "held-out"}]
+    opt = _make_optimizer(valset=valset)
+    opt.compile()
+
+    mock_gepa_instance.compile.assert_called_once_with(
+        opt.student, trainset=opt.trainset, valset=valset
+    )
 
 
 def test_compile_with_no_gepa_kwargs(mock_dspy):

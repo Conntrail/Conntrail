@@ -405,3 +405,63 @@ class TestCostFeedbackText:
         )
         result = cpe_feedback(only, baseline=only)
         assert "more tokens than the original prompt" not in result
+
+
+# --- correctness feedback (so the reflection LM can learn the target) ---
+
+class TestCorrectnessFeedback:
+    def test_includes_expected_label_for_a_wrong_prediction(self):
+        from types import SimpleNamespace
+
+        attempt = _make_attempt([_make_trace(0.5, "boundary")], score=None)
+        fn = CPEFeedbackFunction(
+            _FakeCollector([attempt]),
+            task_metric_fn=lambda g, p: 0.0,
+            output_field="category",
+        )
+        gold = SimpleNamespace(category="refund")
+        pred = SimpleNamespace(category="general")
+        result = fn(gold, pred, None, None, None)
+        assert "expected answer is 'refund'" in result.feedback
+        assert "'general'" in result.feedback
+
+    def test_omits_note_when_prediction_is_correct(self):
+        from types import SimpleNamespace
+
+        attempt = _make_attempt([_make_trace(0.1, "confident")], score=None)
+        fn = CPEFeedbackFunction(
+            _FakeCollector([attempt]),
+            task_metric_fn=lambda g, p: 1.0,
+            output_field="category",
+        )
+        gold = SimpleNamespace(category="refund")
+        pred = SimpleNamespace(category="refund")
+        assert "Correctness:" not in fn(gold, pred, None, None, None).feedback
+
+    def test_omits_note_without_output_field(self):
+        from types import SimpleNamespace
+
+        attempt = _make_attempt([_make_trace(0.5, "boundary")], score=None)
+        fn = CPEFeedbackFunction(_FakeCollector([attempt]), task_metric_fn=lambda g, p: 0.0)
+        gold = SimpleNamespace(category="refund")
+        pred = SimpleNamespace(category="general")
+        assert "Correctness:" not in fn(gold, pred, None, None, None).feedback
+
+    def test_note_includes_the_input_when_available(self):
+        class _Example:
+            def __init__(self):
+                self.category = "replacement"
+
+            def inputs(self):
+                return {"case": "The lamp arrived cracked 3 days ago."}
+
+        attempt = _make_attempt([_make_trace(0.5, "boundary")], score=None)
+        fn = CPEFeedbackFunction(
+            _FakeCollector([attempt]),
+            task_metric_fn=lambda g, p: 0.0,
+            output_field="category",
+        )
+        pred = type("P", (), {"category": "refund"})()
+        feedback = fn(_Example(), pred, None, None, None).feedback
+        assert "lamp arrived cracked" in feedback
+        assert "expected answer is 'replacement'" in feedback

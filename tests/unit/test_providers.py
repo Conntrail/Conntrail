@@ -127,7 +127,8 @@ class TestGetChatModel:
         spy = mocker.patch.object(providers, "_build_model")
         get_chat_model("claude-haiku-4-5-20251001", max_tokens=100)
         spy.assert_called_once_with(
-            "anthropic", "claude-haiku-4-5-20251001", max_tokens=100, temperature=0.0
+            "anthropic", "claude-haiku-4-5-20251001", max_tokens=100, temperature=0.0,
+            disable_reasoning=False
         )
 
     def test_falls_back_when_inferred_provider_key_missing(self, monkeypatch, mocker):
@@ -136,7 +137,8 @@ class TestGetChatModel:
         spy = mocker.patch.object(providers, "_build_model")
         get_chat_model("claude-haiku-4-5-20251001")
         spy.assert_called_once_with(
-            "groq", "llama-3.1-8b-instant", max_tokens=512, temperature=0.0
+            "groq", "llama-3.1-8b-instant", max_tokens=512, temperature=0.0,
+            disable_reasoning=False
         )
 
     def test_unknown_prefix_falls_back_to_available_provider(self, monkeypatch, mocker):
@@ -146,7 +148,8 @@ class TestGetChatModel:
         spy = mocker.patch.object(providers, "_build_model")
         get_chat_model("some-unknown-model")
         spy.assert_called_once_with(
-            "openai", "gpt-4o-mini", max_tokens=512, temperature=0.0
+            "openai", "gpt-4o-mini", max_tokens=512, temperature=0.0,
+            disable_reasoning=False
         )
 
     def test_resolves_gemini_when_key_present(self, monkeypatch, mocker):
@@ -154,33 +157,39 @@ class TestGetChatModel:
         spy = mocker.patch.object(providers, "_build_model")
         get_chat_model("gemini-2.0-flash", max_tokens=100)
         spy.assert_called_once_with(
-            "google", "gemini-2.0-flash", max_tokens=100, temperature=0.0
+            "google", "gemini-2.0-flash", max_tokens=100, temperature=0.0,
+            disable_reasoning=False
         )
 
     def test_local_bare_uses_default_model_name(self, mocker):
         spy = mocker.patch.object(providers, "_build_model")
         get_chat_model("local")
         spy.assert_called_once_with(
-            "local", providers._LOCAL_MODEL_NAME, max_tokens=512, temperature=0.0
+            "local", providers._LOCAL_MODEL_NAME, max_tokens=512, temperature=0.0,
+            disable_reasoning=False
         )
 
     def test_local_with_name_routes_to_local_server(self, mocker):
         spy = mocker.patch.object(providers, "_build_model")
         get_chat_model("local/qwen3")
-        spy.assert_called_once_with("local", "qwen3", max_tokens=512, temperature=0.0)
+        spy.assert_called_once_with(
+            "local", "qwen3", max_tokens=512, temperature=0.0, disable_reasoning=False
+        )
 
     def test_openrouter_bare_uses_fallback_model(self, mocker):
         spy = mocker.patch.object(providers, "_build_model")
         get_chat_model("openrouter")
         spy.assert_called_once_with(
-            "openrouter", providers._FALLBACK_MODELS["openrouter"], max_tokens=512, temperature=0.0
+            "openrouter", providers._FALLBACK_MODELS["openrouter"], max_tokens=512, temperature=0.0,
+            disable_reasoning=False
         )
 
     def test_openrouter_with_vendor_model_routes_correctly(self, mocker):
         spy = mocker.patch.object(providers, "_build_model")
         get_chat_model("openrouter/anthropic/claude-3-haiku")
         spy.assert_called_once_with(
-            "openrouter", "anthropic/claude-3-haiku", max_tokens=512, temperature=0.0
+            "openrouter", "anthropic/claude-3-haiku", max_tokens=512, temperature=0.0,
+            disable_reasoning=False
         )
 
 
@@ -243,6 +252,21 @@ class TestBuildModel:
         assert model.kwargs["base_url"] == providers._OPENROUTER_BASE_URL
         assert model.kwargs["api_key"] == "or-key"
         assert model.kwargs["stream_usage"] is True
+
+    def test_openrouter_disable_reasoning_sets_extra_body(self, monkeypatch):
+        self._inject_fake_module(monkeypatch, "langchain_openai", "ChatOpenAI")
+        monkeypatch.setenv("OPENROUTER_API_KEY", "or-key")
+        model = _build_model(
+            "openrouter", "deepseek/deepseek-v4.1-flash", max_tokens=50,
+            temperature=0.0, disable_reasoning=True,
+        )
+        assert model.kwargs["extra_body"] == {"reasoning": {"enabled": False}}
+
+    def test_openrouter_without_disable_reasoning_omits_extra_body(self, monkeypatch):
+        self._inject_fake_module(monkeypatch, "langchain_openai", "ChatOpenAI")
+        monkeypatch.setenv("OPENROUTER_API_KEY", "or-key")
+        model = _build_model("openrouter", "deepseek/deepseek-v4.1-flash", max_tokens=50)
+        assert "extra_body" not in model.kwargs
 
     def test_gemini_dispatch(self, monkeypatch):
         fake_class = self._inject_fake_module(

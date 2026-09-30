@@ -211,6 +211,16 @@ class TestResolvePrice:
         assert resolve_price("gemini-2.5-flash") == (0.10, 0.025, 0.40)
         assert resolve_price("models/gemini-2.0-flash") == (0.10, 0.025, 0.40)
 
+    def test_dotted_openrouter_slugs_match_hyphenated_table_entries(self):
+        # OpenRouter uses dots; the table uses hyphens. Both must resolve.
+        assert resolve_price("openrouter/anthropic/claude-3.5-haiku") == (0.80, 0.08, 4.00)
+        assert resolve_price("openrouter/anthropic/claude-sonnet-4.5") == (3.00, 0.30, 15.00)
+
+    def test_dot_hyphen_matching_keeps_longest_prefix_precedence(self):
+        # gemini-2.5-pro must beat the generic "gemini" entry.
+        assert resolve_price("openrouter/google/gemini-2.5-pro") == (1.25, 0.31, 10.00)
+        assert resolve_price("openrouter/google/gemini-2.5-flash") == (0.10, 0.025, 0.40)
+
     def test_local_is_free(self):
         assert resolve_price("local/whatever") == (0.0, 0.0, 0.0)
 

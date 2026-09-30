@@ -65,7 +65,7 @@ from conntrail import ConntrailConfig, trace_node
 from conntrail.exporters.http import HttpExporter
 
 config = ConntrailConfig(
-    contrast_model="claude-haiku-4-5-20251001",   # cheap model for contrast generation
+    contrast_model="openrouter/deepseek/deepseek-v4.1-flash",  # cheap model for contrast
     exporter=HttpExporter("http://localhost:8000", api_key="..."),
     sample_rate=1.0,          # trace every call (0.1–0.2 for prod)
     async_mode=True,          # never block the hot path
@@ -115,7 +115,10 @@ Pages: trace list (filterable, HTMX partial swaps), per-trace detail
 (contrasts, entropy, attribution, counterfactual, cost telemetry + findings),
 failure view (grouped by category), a per-node **cost view** (tokens, cache
 hit ratio, estimated cost, shared instruction blocks), and a before/after
-CPE-GEPA panel (now with token/cost deltas).
+CPE-GEPA panel — it groups a run's attempts by prompt candidate and compares
+the **seed prompt** against the **best candidate** (highest mean task
+accuracy, cheaper on ties) on accuracy, stability, per-attempt tokens and
+cost, with a full candidate table showing the trade-off.
 
 ### 4. Or just docker compose it
 
@@ -126,6 +129,24 @@ docker compose -f deploy/docker-compose.yml --env-file .env up --build
 
 Collector (sqlite on a mounted volume, survives restarts) + dashboard, both
 healthchecked.
+
+## Demo (one command)
+
+`demo.sh` brings up the collector + dashboard, traces a real external agent
+(the [Sequence-game tournament](examples/sequence/), used read-only), and
+runs the weak-seed GEPA comparison:
+
+```bash
+export OPENROUTER_API_KEY=...    # real token + dollar telemetry
+./demo.sh all
+```
+
+It prints the dashboard URLs — the **Cost** view (per-node tokens, cache-hit
+ratio, estimated cost, shared instruction blocks), per-trace detail (stability
+plus cost findings), and the **Before/After** panel for the GEPA run. Commands:
+`services`, `stop`, `reset`, `trace`, `gepa`, `all`, `urls`. Without an
+OpenRouter key it falls back to a local OpenAI-compatible server
+(`LOCAL_LLM_URL`).
 
 ## Failure classification
 
@@ -226,12 +247,35 @@ reasoning. See `.env.example` for every variable.
 function scores each prompt candidate by the routing entropy of its Conntrail
 traces (`CPEGEPAOptimizer`). Attempts are POSTed to the collector's
 `/v1/gepa-attempts` as they're scored; the dashboard's before/after panel
-compares the first vs. last attempt.
+groups them by prompt candidate and compares the seed prompt against the best
+candidate.
+
+By default it holds out `--holdout` examples as a valset and reports
+**held-out accuracy** — a 1.0 on the examples GEPA optimized on is train-fit,
+not generalization (set `--holdout 0` to reuse the trainset, e.g. for the old
+behavior). `--weak-seed` starts from a deliberately poor prompt so the loop has
+something to fix.
+
+Two student tasks ship in the example:
+
+- `--task classification` (default) — four-way category routing. Strong models
+  saturate it regardless of the prompt, so there is little to optimize.
+- `--task policy` — rule-following resolution (refund/replacement/store_credit/
+  return_label/escalate/no_action) driven by a specific policy. Instruction
+  quality materially moves accuracy, so GEPA has real headroom (observed
+  held-out ~0.25–0.8 → ~0.4–0.9 depending on the split).
+
+The feedback function names the expected label for wrong predictions
+(`CPEFeedbackFunction(output_field=...)`) — without that corrective signal the
+reflection LM only sees stability/entropy advice and cannot learn the rules.
+Keep `--sample-rate 1.0` when scoring cost: a traced rollout makes ~6 LLM calls
+vs 1 untraced, so a lower rate turns the token cost into tracing noise.
 
 ```bash
-python examples/gepa/run_live.py --max-metric-calls 8 \
-    --student-model local/unsloth/gemma-4-12b-it-GGUF \
-    --reflection-model local/unsloth/gemma-4-12b-it-GGUF \
+python examples/gepa/run_live.py --task policy --weak-seed --holdout 8 \
+    --num-examples 30 --max-metric-calls 24 --sample-rate 1.0 \
+    --student-model openrouter/deepseek/deepseek-v4.1-flash \
+    --reflection-model openrouter/deepseek/deepseek-v4.1-flash \
     --collector-url http://localhost:8000
 ```
 
@@ -256,7 +300,9 @@ verified results.
 src/conntrail/            SDK: interceptor, analyser, contrast, record, wrap, cost, cost_analyzer, exporters, gepa/
 src/conntrail_server/     collector: routes (ingest/query/gepa/cost), store, classifier, auth, migrations/
 src/conntrail_dashboard/  dashboard: routes, client, templates/, static/
-examples/gepa/            G1 student module + trainset + live GEPA run script
+examples/gepa/            customer-support student + trainset + live GEPA run script
+examples/sequence/        external-agent tracing harness (Sequence-game tournament, read-only)
+demo.sh                   one-command demo runner (services + trace + GEPA)
 deploy/                   Dockerfile.server, Dockerfile.dashboard, docker-compose.yml
 docs/                     EPICS.md (work breakdown), TESTING.md (test plan + results)
 tests/                    unit/ + integration/ + fixtures/

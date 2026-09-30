@@ -30,11 +30,19 @@ class CustomerSupportRouter(dspy.Module):
 
     Standalone-runnable (see acceptance criteria for G1): call it directly
     with a message to get a category prediction, independent of GEPA.
+
+    Args:
+        instructions: Optional override for the classifier's initial prompt.
+            Used by the weak-seed demo mode so GEPA starts from a
+            deliberately poor prompt and has something to improve.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, instructions: str | None = None) -> None:
         super().__init__()
-        self.classify = dspy.Predict(ClassifyCustomerQuery)
+        signature = ClassifyCustomerQuery
+        if instructions:
+            signature = signature.with_instructions(instructions)
+        self.classify = dspy.Predict(signature)
 
     def forward(self, message: str) -> dspy.Prediction:
         result = self.classify(message=message)

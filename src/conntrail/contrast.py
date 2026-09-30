@@ -16,6 +16,8 @@ from typing import TYPE_CHECKING
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 
+from conntrail.utils.providers import DEFAULT_CONTRAST_MODEL
+
 if TYPE_CHECKING:
     from conntrail.cost import TokenUsage
 
@@ -58,7 +60,7 @@ class ContrastGenerator:
 
     def __init__(
         self,
-        model: str = "claude-haiku-4-5-20251001",
+        model: str = DEFAULT_CONTRAST_MODEL,
         *,
         llm: BaseChatModel | None = None,
     ) -> None:
@@ -105,7 +107,9 @@ class ContrastGenerator:
         """Lazy-build and cache the LangChain model instance."""
         if self._llm is None:
             from conntrail.utils.providers import get_chat_model
-            self._llm = get_chat_model(self.model, max_tokens=300)
+            # Reasoning suppression + headroom: reasoning models otherwise think
+            # away the budget before emitting the JSON.
+            self._llm = get_chat_model(self.model, max_tokens=2048, disable_reasoning=True)
         return self._llm
 
     def _load_prompt_template(self) -> str:

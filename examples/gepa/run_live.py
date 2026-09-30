@@ -53,6 +53,7 @@ import os
 import sys
 import uuid
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 
 import dspy
@@ -62,6 +63,8 @@ from dspy.utils.usage_tracker import track_usage
 sys.path.insert(0, str(Path(__file__).parent))
 
 from customer_support_student import CustomerSupportRouter  # noqa: E402
+from policy_student import PolicyRouter  # noqa: E402
+from policy_trainset import POLICY_TRAINSET  # noqa: E402
 from trainset import TRAINSET  # noqa: E402
 
 from conntrail import ConntrailConfig  # noqa: E402
@@ -69,28 +72,96 @@ from conntrail.cost import TokenUsage, estimate_cost  # noqa: E402
 from conntrail.gepa import CPEGEPAOptimizer  # noqa: E402
 from conntrail.gepa.bridge import TraceCollector  # noqa: E402
 from conntrail.interceptor import NodeInterceptor  # noqa: E402
+from conntrail.utils.providers import DEFAULT_MODEL  # noqa: E402
 
 logger = logging.getLogger("conntrail.examples.gepa")
 
-DEFAULT_STUDENT_MODEL = "claude-haiku-4-5-20251001"  # matches ConntrailConfig's own default
-DEFAULT_REFLECTION_MODEL = "claude-opus-5"
+DEFAULT_STUDENT_MODEL = DEFAULT_MODEL
+DEFAULT_REFLECTION_MODEL = DEFAULT_MODEL
 # Reflection on a small local model can't spare 4000 tokens of budget —
 # keep prompts/answers short instead.
 _LOCAL_REFLECTION_MAX_TOKENS = 1500
+
+# Demo mode: a plausible-but-weak first draft the optimizer must improve on.
+# With the default (already-good) signature instructions GEPA often accepts the
+# seed prompt immediately and never mutates, which makes the before/after panel
+# flat. Starting here gives the loop something real to fix. Kept category-shaped
+# (not "write a reply") so the model's output stays parseable.
+WEAK_SEED_INSTRUCTIONS = (
+    "Classify the customer message into one category. Default to 'general', "
+    "and only answer 'refund' when the customer literally uses the word refund."
+)
+
+# Policy-task weak seed: no rules at all, so the model has to guess the
+# non-obvious policy (the good default in policy_student.py states it).
+POLICY_WEAK_SEED = "Choose the best resolution action for this customer support case."
+
+
+@dataclass(frozen=True)
+class _TaskSpec:
+    """How the traced GEPA wrapper drives a particular student task."""
+
+    node_id: str
+    student_cls: type
+    trainset: list
+    weak_seed: str
+    input_key: str        # the example field fed to the student
+    output_field: str     # the Prediction field holding the decision
+    predict_attr: str     # the Predict submodule GEPA mutates
+
+
+_TASKS: dict[str, _TaskSpec] = {
+    # Four-way classification — saturated for strong models (kept for the
+    # machinery tests); the policy task below has real headroom.
+    "classification": _TaskSpec(
+        node_id="classify_query",
+        student_cls=CustomerSupportRouter,
+        trainset=TRAINSET,
+        weak_seed=WEAK_SEED_INSTRUCTIONS,
+        input_key="message",
+        output_field="category",
+        predict_attr="classify",
+    ),
+    # Policy-following resolution — instruction quality materially changes
+    # accuracy, so GEPA has something real to optimize.
+    "policy": _TaskSpec(
+        node_id="resolve_case",
+        student_cls=PolicyRouter,
+        trainset=POLICY_TRAINSET,
+        weak_seed=POLICY_WEAK_SEED,
+        input_key="case",
+        output_field="resolution",
+        predict_attr="resolve",
+    ),
+}
 
 
 def _is_local(model: str) -> bool:
     return model == "local" or model.startswith("local/")
 
 
-def make_lm(model: str, *, api_key: str | None, max_tokens: int) -> dspy.LM:
+def _is_openrouter(model: str) -> bool:
+    return model == "openrouter" or model.startswith("openrouter/")
+
+
+def _required_key_env(model: str) -> str | None:
+    """Env var holding the credential for a model string (None if keyless/local)."""
+    if _is_local(model):
+        return None
+    if _is_openrouter(model):
+        return "OPENROUTER_API_KEY"
+    return "ANTHROPIC_API_KEY"
+
+
+def make_lm(model: str, *, max_tokens: int) -> dspy.LM:
     """Build a dspy.LM from a model string.
 
     "local/<name>" routes to the local OpenAI-compatible server at
     LOCAL_LLM_URL (auth per LOCAL_AUTH_MODE — JWT for Unsloth Studio), with
     chain-of-thought disabled in JWT mode so small max_tokens budgets aren't
-    consumed by reasoning. Anything else is an Anthropic model name, per the
-    original G2 scope.
+    consumed by reasoning. "openrouter/<vendor>/<model>" routes through
+    OpenRouter (litellm-native; OPENROUTER_API_KEY). Anything else is an
+    Anthropic model name.
 
     cache=False: dspy's persistent response cache returns cache_hit responses
     with empty usage, which makes every attempt's token stamp (and the
@@ -112,8 +183,26 @@ def make_lm(model: str, *, api_key: str | None, max_tokens: int) -> dspy.LM:
             cache=False,
             **local_chat_kwargs(),
         )
+    if _is_openrouter(model):
+        api_key = os.environ.get("OPENROUTER_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                f"OPENROUTER_API_KEY is required for OpenRouter model {model!r}."
+            )
+        return dspy.LM(
+            model,
+            api_key=api_key,
+            max_tokens=max_tokens,
+            temperature=0.0,
+            cache=False,
+            # Skip chain-of-thought: DeepSeek-class reasoning models otherwise
+            # think before every rollout/reflection, which roughly triples GEPA
+            # wall-clock for a 4-way classification that doesn't need it.
+            extra_body={"reasoning": {"enabled": False}},
+        )
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        raise RuntimeError(f"ANTHROPIC_API_KEY is required for non-local model {model!r}.")
+        raise RuntimeError(f"ANTHROPIC_API_KEY is required for model {model!r}.")
     return dspy.LM(
         f"anthropic/{model}", api_key=api_key, max_tokens=max_tokens, cache=False
     )
@@ -160,6 +249,7 @@ def make_traced_router_class(
     collector: TraceCollector,
     config: ConntrailConfig,
     *,
+    task: _TaskSpec,
     local_student: bool = False,
 ) -> type[dspy.Module]:
     """Build a traced dspy.Module class bound to `collector`/`config` via closure.
@@ -180,35 +270,37 @@ def make_traced_router_class(
     comparisons in the feedback function stay fair.
     """
 
-    class TracedCustomerSupportRouter(dspy.Module):
-        def __init__(self, inner: CustomerSupportRouter) -> None:
+    class TracedRouter(dspy.Module):
+        def __init__(self, inner) -> None:
             super().__init__()
             self.inner = inner  # a real dspy submodule — GEPA copies/mutates it correctly
 
-        def forward(self, message: str) -> dspy.Prediction:
-            async def classify_query(state: dict) -> dict:
-                prediction = self.inner(message=state["message"])
-                return {**state, "category": prediction.category}
+        def forward(self, **inputs) -> dspy.Prediction:
+            text = inputs[task.input_key]
+
+            async def decision(state: dict) -> dict:
+                prediction = self.inner(**{task.input_key: state["value"]})
+                return {**state, "value": getattr(prediction, task.output_field)}
 
             interceptor = NodeInterceptor(
-                classify_query,
-                node_id="classify_query",
+                decision,
+                node_id=task.node_id,
                 config=config,
-                input_key="message",
-                route_key="category",
+                input_key="value",
+                route_key="value",
             )
-            prompt_candidate = self.inner.classify.signature.instructions
+            prompt_candidate = getattr(self.inner, task.predict_attr).signature.instructions
             collector.begin_attempt(prompt_candidate)
             with track_usage() as tracker:
-                state = asyncio.run(interceptor({"message": message, "category": None}))
+                state = asyncio.run(interceptor({"value": text}))
             attempt = collector.end_attempt()
             attempt.token_usage = _dspy_usage_summary(tracker)
             attempt.cost_usd = (
                 0.0 if local_student and attempt.token_usage else _dspy_usage_cost(tracker)
             )
-            return dspy.Prediction(category=state["category"])
+            return dspy.Prediction(**{task.output_field: state["value"]})
 
-    return TracedCustomerSupportRouter
+    return TracedRouter
 
 
 def make_collector_poster(collector_url: str, api_key: str | None, run_id: str):
@@ -247,13 +339,33 @@ def make_collector_poster(collector_url: str, api_key: str | None, run_id: str):
     return _post
 
 
-def make_task_metric_fn():
-    """Task accuracy: 1.0 if the predicted category matches the example's expected category."""
+def make_task_metric_fn(task: _TaskSpec):
+    """Task accuracy: 1.0 if the predicted decision matches the example's label."""
 
     def _metric(gold: dspy.Example, pred: dspy.Prediction) -> float:
-        return 1.0 if pred.category == gold.category else 0.0
+        return 1.0 if getattr(pred, task.output_field) == getattr(gold, task.output_field) else 0.0
 
     return _metric
+
+
+def heldout_accuracy(student, examples, metric_fn, input_key: str) -> float | None:
+    """Accuracy on examples the optimizer never trained on.
+
+    A perfect score on the *training* set is a red flag (GEPA can fit a prompt
+    to the sample); this is the honest generalization signal. `student` is the
+    un-traced dspy module (the traced wrapper's `.inner`), so evaluation adds no
+    Conntrail traces and no cost telemetry of its own.
+    """
+    if not examples:
+        return None
+    correct = 0.0
+    for example in examples:
+        try:
+            pred = student(**{input_key: getattr(example, input_key)})
+        except Exception:  # noqa: BLE001 - a failed rollout counts as wrong
+            continue
+        correct += metric_fn(example, pred)
+    return correct / len(examples)
 
 
 def parse_args() -> argparse.Namespace:
@@ -269,13 +381,15 @@ def parse_args() -> argparse.Namespace:
         "--num-examples",
         type=int,
         default=6,
-        help=f"How many trainset examples to use (out of {len(TRAINSET)} available). Default: 6.",
+        help="How many trainset examples to use (capped by the selected task's "
+        "trainset size). Default: 6.",
     )
     parser.add_argument(
         "--student-model",
         default=os.environ.get("CONNTRAIL_GEPA_STUDENT_MODEL", DEFAULT_STUDENT_MODEL),
-        help="Student LM. Cloud model name (Anthropic) or 'local/<name>' for the "
-             "local server. Defaults to CONNTRAIL_GEPA_STUDENT_MODEL, then "
+        help="Student LM: an OpenRouter slug ('openrouter/<vendor>/<model>'), an "
+             "Anthropic model name, or 'local/<name>' for the local server. "
+             "Defaults to CONNTRAIL_GEPA_STUDENT_MODEL, then "
              f"{DEFAULT_STUDENT_MODEL}.",
     )
     parser.add_argument(
@@ -286,7 +400,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--contrast-model",
-        default=os.environ.get("CONNTRAIL_CONTRAST_MODEL", "claude-haiku-4-5-20251001"),
+        default=os.environ.get("CONNTRAIL_CONTRAST_MODEL", DEFAULT_MODEL),
         help="Contrast-generation model used by the tracing itself (never the "
         "student model). Same conventions as --student-model. Defaults to "
         "CONNTRAIL_CONTRAST_MODEL, then the SDK default.",
@@ -298,6 +412,45 @@ def parse_args() -> argparse.Namespace:
         help="Lambda folding token cost into the GEPA score: "
         "score = task - cost_weight * (tokens/baseline - 1). 0 disables cost "
         "scoring. Default: 0.1.",
+    )
+    parser.add_argument(
+        "--task",
+        choices=sorted(_TASKS),
+        default="classification",
+        help="Which student task to optimize: 'classification' (four-way "
+        "category — saturated for strong models) or 'policy' (rule-following "
+        "resolution — has real headroom). Default: classification.",
+    )
+    parser.add_argument(
+        "--holdout",
+        type=int,
+        default=3,
+        help="Examples held out of optimization as a valset, so the reported "
+        "score is generalization rather than train-fit. Set 0 to let GEPA reuse "
+        "the trainset (its score is then a training score — 1.0 is a red flag). "
+        "Default: 3.",
+    )
+    parser.add_argument(
+        "--sample-rate",
+        type=float,
+        default=1.0,
+        help="Fraction of rollouts to trace (contrast + 4 divergence re-runs). "
+        "Keep at 1.0 when using --cost-weight > 0: a traced rollout makes ~6 LLM "
+        "calls vs 1 untraced, so a lower rate makes the token cost signal noise "
+        "instead of prompt cost. Lower only if you don't score cost. Default: 1.0.",
+    )
+    parser.add_argument(
+        "--weak-seed",
+        action="store_true",
+        help="Demo mode: start from a deliberately weak student prompt so GEPA "
+        "has something to improve (the default seed prompt already scores high, "
+        "so before/after panels are usually flat).",
+    )
+    parser.add_argument(
+        "--seed-prompt",
+        default=None,
+        help="Override the student's initial instructions with this text. "
+        "Takes precedence over --weak-seed.",
     )
     parser.add_argument(
         "--output",
@@ -332,31 +485,47 @@ def main() -> None:
         pass
     args = parse_args()
 
-    # ANTHROPIC_API_KEY is only required when either LM is a cloud model;
-    # "local/..." models authenticate against the local server instead.
-    api_key: str | None = None
-    if not (_is_local(args.student_model) and _is_local(args.reflection_model)):
-        api_key = os.environ.get("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise RuntimeError(
-                "ANTHROPIC_API_KEY is required for a live CPE-GEPA run with cloud "
-                "models. Set it in the environment (or .env), or pass "
-                "--student-model/--reflection-model local/<name> to run against "
-                "the local server instead."
-            )
+    # Validate credentials for whichever provider each model needs: local
+    # servers use LOCAL_* auth, OpenRouter uses OPENROUTER_API_KEY, everything
+    # else is Anthropic (ANTHROPIC_API_KEY). The contrast model is resolved by
+    # Conntrail's own provider layer, so validate it too.
+    missing: set[str] = set()
+    for model in (args.student_model, args.reflection_model, args.contrast_model):
+        env_name = _required_key_env(model)
+        if env_name and not os.environ.get(env_name):
+            missing.add(env_name)
+    if missing:
+        raise RuntimeError(
+            f"{', '.join(sorted(missing))} required for the configured models. "
+            "Set the key(s) in the environment (or .env), or pass local/<name> / "
+            "openrouter/<vendor>/<model> model strings instead."
+        )
 
-    student_max_tokens = 100 if _is_local(args.student_model) else 20
+    # Cloud students get headroom beyond the bare category label: reasoning
+    # models think first, and weak-seed runs write prose until the prompt is
+    # fixed — a tiny cap only truncates (and retries) without helping the score.
+    student_max_tokens = 100 if _is_local(args.student_model) else 600
     reflection_max_tokens = (
         _LOCAL_REFLECTION_MAX_TOKENS if _is_local(args.reflection_model) else 4000
     )
 
     dspy.settings.configure(
-        lm=make_lm(args.student_model, api_key=api_key, max_tokens=student_max_tokens)
+        lm=make_lm(args.student_model, max_tokens=student_max_tokens)
     )
 
-    trainset = TRAINSET[: args.num_examples]
+    task = _TASKS[args.task]
+    examples = task.trainset[: args.num_examples]
+    holdout = min(args.holdout, max(0, len(examples) - 2))
+    if holdout > 0:
+        valset = examples[-holdout:]
+        trainset = examples[:-holdout]
+    else:
+        valset = None
+        trainset = examples
     if len(trainset) < 2:
         raise ValueError("Need at least 2 trainset examples for a GEPA run.")
+
+    task_metric = make_task_metric_fn(task)
 
     run_id = str(uuid.uuid4())
     on_attempt_scored = None
@@ -375,10 +544,12 @@ def main() -> None:
     optimizer = CPEGEPAOptimizer(
         student=None,
         trainset=trainset,
-        task_metric_fn=make_task_metric_fn(),
+        valset=valset,
+        task_metric_fn=task_metric,
+        output_field=task.output_field,
         base_conntrail_config=ConntrailConfig(
             contrast_model=args.contrast_model,
-            sample_rate=1.0,
+            sample_rate=args.sample_rate,
             entropy_alert_threshold=0.0,
             async_mode=False,
         ),
@@ -387,7 +558,7 @@ def main() -> None:
         gepa_kwargs={
             "max_metric_calls": args.max_metric_calls,
             "reflection_lm": make_lm(
-                args.reflection_model, api_key=api_key, max_tokens=reflection_max_tokens
+                args.reflection_model, max_tokens=reflection_max_tokens
             ),
             # TraceCollector's begin/end-attempt lifecycle assumes one attempt
             # in flight at a time (see module docstring) — GEPA's default
@@ -400,28 +571,54 @@ def main() -> None:
     TracedRouter = make_traced_router_class(
         optimizer.collector,
         optimizer.conntrail_config,
+        task=task,
         local_student=_is_local(args.student_model),
     )
-    optimizer.student = TracedRouter(CustomerSupportRouter())
+    seed_instructions = args.seed_prompt or (task.weak_seed if args.weak_seed else None)
+    if seed_instructions:
+        logger.info("Seeding student with custom instructions (%d chars)", len(seed_instructions))
+    optimizer.student = TracedRouter(task.student_cls(instructions=seed_instructions))
 
     logger.info(
-        "Starting CPE-GEPA compile(): %d trainset examples, max_metric_calls=%d, "
-        "student=%s, reflection=%s",
+        "Starting CPE-GEPA compile(): %d trainset examples (+%d held out), "
+        "max_metric_calls=%d, student=%s, reflection=%s",
         len(trainset),
+        len(valset) if valset else 0,
         args.max_metric_calls,
         args.student_model,
         args.reflection_model,
     )
     optimized = optimizer.compile()
 
+    seed_heldout = heldout_accuracy(optimizer.student.inner, valset, task_metric, task.input_key)
+    optimized_heldout = heldout_accuracy(optimized.inner, valset, task_metric, task.input_key)
+    if valset:
+        optimized_text = (
+            f"{optimized_heldout:.3f}" if optimized_heldout is not None else "n/a"
+        )
+        print(
+            f"\nHeld-out accuracy ({len(valset)} examples never optimized on): "
+            f"seed {seed_heldout:.3f} -> optimized {optimized_text}"
+        )
+    else:
+        print(
+            "\nNo held-out valset — scores below are training scores, not "
+            "generalization (pass --holdout N for an honest number)."
+        )
+
     attempts = optimizer.attempt_records
     logger.info("compile() finished with %d recorded attempts.", len(attempts))
 
     summary = {
         "run_id": run_id,
+        "task": args.task,
         "num_trainset_examples": len(trainset),
+        "num_holdout_examples": len(valset) if valset else 0,
+        "heldout_accuracy_seed": seed_heldout,
+        "heldout_accuracy_optimized": optimized_heldout,
         "max_metric_calls": args.max_metric_calls,
         "cost_weight": args.cost_weight,
+        "seed_instructions": seed_instructions,
         "num_attempts": len(attempts),
         "attempts": [
             {

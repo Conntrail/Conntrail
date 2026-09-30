@@ -2,6 +2,10 @@
 Tests for the before/after CPE-GEPA panel (D2), against a mocked collector
 HTTP client (a fixture pair of GEPA attempt records — the G3 query response
 shape).
+
+The panel compares the run's *seed prompt* with its *best candidate*
+(grouped by exact prompt text, aggregated over that candidate's attempts),
+and lists every candidate with its accuracy / cost trade-off.
 """
 from __future__ import annotations
 
@@ -101,7 +105,7 @@ def test_run_with_no_attempts_shows_error(client_with):
     assert "no recorded attempts" in resp.text
 
 
-def test_renders_first_and_last_attempt_stats(client_with):
+def test_renders_seed_and_best_candidate(client_with):
     first_traces = [
         _trace(0.9, "fragile", "semantic intensity"),
         _trace(0.8, "fragile", "semantic intensity"),
@@ -127,6 +131,8 @@ def test_renders_first_and_last_attempt_stats(client_with):
     assert "Original prompt." in body
     assert "Optimized prompt." in body
     assert "3" in body  # num_attempts
+    assert "2 prompt candidate" in body  # grouped, not 3 attempts
+    assert "seed" in body and "best" in body
 
 
 def test_computed_stats_and_deltas_match_expected_values(client_with):
@@ -233,3 +239,139 @@ def test_attempt_cost_falls_back_to_embedded_traces(client_with):
     assert summary["total_output_tokens"] == 30
     assert summary["total_cost_usd"] == pytest.approx(0.003)
     assert summary["mean_latency_ms"] == 80.0
+
+
+# ---------------------------------------------------------------------------
+# Candidate grouping / selection (the point of the panel)
+# ---------------------------------------------------------------------------
+
+
+def test_group_candidates_groups_by_prompt_preserving_order():
+    from conntrail_dashboard.routes import _group_candidates
+
+    attempts = [
+        _attempt("a0", "seed", 0.0, []),
+        _attempt("a1", "mutant", 0.5, []),
+        _attempt("a2", "seed", 0.1, []),
+    ]
+    groups = _group_candidates(attempts)
+    assert [g["prompt_candidate"] for g in groups] == ["seed", "mutant"]
+    assert len(groups[0]["attempts"]) == 2
+    assert len(groups[1]["attempts"]) == 1
+
+
+def test_candidate_summary_aggregates_attempts_and_pools_traces():
+    from conntrail_dashboard.routes import _candidate_summary
+
+    group = {
+        "prompt_candidate": "seed",
+        "attempts": [
+            _attempt("a0", "seed", 0.0, [_trace(0.8, "fragile", "semantic intensity")],
+                     token_usage={"input_tokens": 100, "output_tokens": 10}, cost_usd=0.001),
+            _attempt("a1", "seed", 1.0, [_trace(0.2, "confident", "semantic intensity")],
+                     token_usage={"input_tokens": 300, "output_tokens": 30}, cost_usd=0.002),
+        ],
+    }
+    summary = _candidate_summary(group)
+    assert summary["num_attempts"] == 2
+    assert summary["num_traces"] == 2
+    assert summary["mean_score"] == pytest.approx(0.5)
+    assert summary["best_score"] == 1.0
+    assert summary["mean_entropy"] == pytest.approx(0.5)  # (0.8 + 0.2) / 2
+    assert summary["fragile_count"] == 1
+    assert summary["confident_count"] == 1
+    assert summary["total_input_tokens"] == 400
+    assert summary["total_output_tokens"] == 40
+    assert summary["total_cost_usd"] == pytest.approx(0.003)
+    # Per-attempt means — the fair basis for comparing candidates sampled a
+    # different number of times.
+    assert summary["mean_input_tokens"] == pytest.approx(200)
+    assert summary["mean_output_tokens"] == pytest.approx(20)
+    assert summary["mean_cost_usd"] == pytest.approx(0.0015)
+
+
+def test_select_best_prefers_highest_mean_score():
+    from conntrail_dashboard.routes import _select_best
+
+    candidates = [
+        {"mean_score": 0.5, "total_input_tokens": 100, "total_output_tokens": 0},
+        {"mean_score": 0.9, "total_input_tokens": 200, "total_output_tokens": 0},
+        {"mean_score": 0.7, "total_input_tokens": 50, "total_output_tokens": 0},
+    ]
+    assert _select_best(candidates) == 1
+
+
+def test_select_best_tie_breaks_on_fewer_tokens():
+    from conntrail_dashboard.routes import _select_best
+
+    candidates = [
+        {"mean_score": 1.0, "total_input_tokens": 5000, "total_output_tokens": 500},
+        {"mean_score": 1.0, "total_input_tokens": 1000, "total_output_tokens": 100},
+    ]
+    assert _select_best(candidates) == 1  # equal accuracy, cheaper
+
+
+def test_select_best_falls_back_to_last_without_scores():
+    from conntrail_dashboard.routes import _select_best
+
+    candidates = [
+        {"mean_score": None, "total_input_tokens": 10, "total_output_tokens": 1},
+        {"mean_score": None, "total_input_tokens": 20, "total_output_tokens": 2},
+    ]
+    assert _select_best(candidates) == 1
+
+
+def test_route_reports_improvement_delta_and_candidate_table(client_with):
+    run = {
+        "run_id": "run-1",
+        "attempts": [
+            _attempt("a0", "weak seed", 0.25, [_trace(0.9, "fragile", "semantic intensity")],
+                     token_usage={"input_tokens": 1000, "output_tokens": 100}, cost_usd=0.010),
+            _attempt("a1", "weak seed", 0.25, [_trace(0.8, "fragile", "semantic intensity")]),
+            _attempt("a2", "better prompt", 1.0, [_trace(0.1, "confident", "surface form")],
+                     token_usage={"input_tokens": 600, "output_tokens": 60}, cost_usd=0.006),
+        ],
+    }
+    client, _ = client_with({"run-1": run})
+    body = client.get("/before-after", params={"run_id": "run-1"}).text
+
+    assert "Delta (best" in body
+    assert "+0.750" in body          # mean score delta 1.0 - 0.25
+    assert "1000 / 100" in body      # seed tokens
+    assert "600 / 60" in body        # best tokens
+    assert "2 prompt candidate" in body
+
+
+def test_route_shows_kept_seed_notice_when_no_candidate_improves(client_with):
+    run = {
+        "run_id": "run-1",
+        "attempts": [
+            _attempt("a0", "seed", 0.9, [_trace(0.1, "confident", "urgency/sentiment")]),
+            _attempt("a1", "worse mutant", 0.5, [_trace(0.4, "boundary", "urgency/sentiment")]),
+        ],
+    }
+    client, _ = client_with({"run-1": run})
+    body = client.get("/before-after", params={"run_id": "run-1"}).text
+    assert "kept the seed prompt" in body
+
+
+def test_route_averages_a_candidates_repeated_attempts(client_with):
+    run = {
+        "run_id": "run-1",
+        "attempts": [
+            _attempt("a0", "seed", 0.0, [_trace(0.2, "confident", "urgency/sentiment")]),
+            _attempt("a1", "candidate b", 1.0, [_trace(0.1, "confident", "urgency/sentiment")]),
+            _attempt("a2", "candidate b", 0.0, [_trace(0.3, "boundary", "urgency/sentiment")]),
+        ],
+    }
+    client, _ = client_with({"run-1": run})
+
+    from conntrail_dashboard.routes import _candidate_summary, _group_candidates
+
+    groups = _group_candidates(run["attempts"])
+    b = _candidate_summary(groups[1])
+    assert b["mean_score"] == pytest.approx(0.5)  # (1.0 + 0.0) / 2
+
+    body = client.get("/before-after", params={"run_id": "run-1"}).text
+    assert "candidate b" in body
+    assert "kept the seed prompt" not in body  # candidate b (0.5) beats the seed (0.0)

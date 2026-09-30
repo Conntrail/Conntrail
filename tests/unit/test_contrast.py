@@ -141,7 +141,7 @@ class TestContrastGeneratorMocked:
 
     def test_instantiation_default_model(self):
         gen = ContrastGenerator()
-        assert gen.model == "claude-haiku-4-5-20251001"
+        assert gen.model == "openrouter/deepseek/deepseek-v4.1-flash"
 
     def test_instantiation_custom_model(self):
         gen = ContrastGenerator(model="llama-3.1-8b-instant")

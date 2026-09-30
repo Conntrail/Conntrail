@@ -196,9 +196,95 @@ def _delta(last: dict[str, Any], first: dict[str, Any], key: str) -> float | Non
     return a - b if a is not None and b is not None else None
 
 
+def _group_candidates(attempts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Group attempts by exact prompt text, preserving first-seen order.
+
+    GEPA evaluates each prompt candidate several times (minibatches, full
+    re-evals), so a run's attempts are samples of a handful of *candidates* —
+    comparing two individual attempts says little about the optimization.
+    """
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for attempt in attempts:
+        groups.setdefault(attempt.get("prompt_candidate", ""), []).append(attempt)
+    return [{"prompt_candidate": p, "attempts": a} for p, a in groups.items()]
+
+
+def _candidate_summary(group: dict[str, Any]) -> dict[str, Any]:
+    """Aggregate a prompt candidate's attempts into one comparable summary."""
+    attempts = group["attempts"]
+    traces = [t for a in attempts for t in (a.get("traces") or [])]
+    n = len(traces)
+    fragile_count = sum(1 for t in traces if t.get("stability") == "fragile")
+    boundary_count = sum(1 for t in traces if t.get("stability") == "boundary")
+    mean_entropy = sum(t.get("entropy_score", 0.0) for t in traces) / n if n else None
+    dominant_attribution = None
+    if traces:
+        counts = Counter(t.get("attribution_dimension") for t in traces)
+        dominant_attribution = counts.most_common(1)[0][0]
+
+    scores = [a["scalar_score"] for a in attempts if a.get("scalar_score") is not None]
+    per_attempt = [_attempt_summary(a) for a in attempts]
+    total_input_tokens = sum(s["total_input_tokens"] for s in per_attempt)
+    total_output_tokens = sum(s["total_output_tokens"] for s in per_attempt)
+    costs = [s["total_cost_usd"] for s in per_attempt if s["total_cost_usd"] is not None]
+    total_cost_usd = round(sum(costs), 6) if costs else None
+    latencies = [s["mean_latency_ms"] for s in per_attempt if s["mean_latency_ms"] is not None]
+
+    # Per-attempt means, over attempts that actually carry telemetry: candidates
+    # are sampled a different number of times, so *totals* would make a
+    # rarely-sampled candidate look artificially cheap.
+    tokenised = [
+        s for s in per_attempt if (s["total_input_tokens"] or s["total_output_tokens"])
+    ]
+    mean_input_tokens = sum(s["total_input_tokens"] for s in tokenised) / len(tokenised) if tokenised else 0
+    mean_output_tokens = sum(s["total_output_tokens"] for s in tokenised) / len(tokenised) if tokenised else 0
+    mean_cost_usd = round(sum(costs) / len(costs), 6) if costs else None
+
+    return {
+        "prompt_candidate": group["prompt_candidate"],
+        "num_attempts": len(attempts),
+        "num_traces": n,
+        "mean_score": sum(scores) / len(scores) if scores else None,
+        "best_score": max(scores) if scores else None,
+        "mean_entropy": mean_entropy,
+        "fragile_count": fragile_count,
+        "boundary_count": boundary_count,
+        "confident_count": n - fragile_count - boundary_count,
+        "dominant_attribution": dominant_attribution,
+        "total_input_tokens": total_input_tokens,
+        "total_output_tokens": total_output_tokens,
+        "total_cost_usd": total_cost_usd,
+        "mean_input_tokens": mean_input_tokens,
+        "mean_output_tokens": mean_output_tokens,
+        "mean_cost_usd": mean_cost_usd,
+        "mean_latency_ms": (sum(latencies) / len(latencies)) if latencies else None,
+        "is_seed": False,
+        "is_best": False,
+    }
+
+
+def _select_best(candidates: list[dict[str, Any]]) -> int:
+    """Index of the best candidate: highest mean task score, cheaper on ties.
+
+    Falls back to the last candidate when no attempt carries a score (e.g. a
+    run with no task metric) — that is what the optimizer ended on.
+    """
+    scored = [(i, c) for i, c in enumerate(candidates) if c["mean_score"] is not None]
+    if not scored:
+        return len(candidates) - 1
+    best_index, _ = max(
+        scored,
+        key=lambda ic: (
+            ic[1]["mean_score"],
+            -(ic[1]["total_input_tokens"] + ic[1]["total_output_tokens"]),
+        ),
+    )
+    return best_index
+
+
 @router.get("/before-after", response_class=HTMLResponse)
 async def before_after(request: Request, run_id: str | None = None):
-    context: dict[str, Any] = {"run_id": run_id, "error": None, "first": None, "last": None}
+    context: dict[str, Any] = {"run_id": run_id, "error": None, "seed": None, "best": None}
 
     if run_id:
         data = await _collector(request).get_gepa_attempts(run_id)
@@ -208,21 +294,32 @@ async def before_after(request: Request, run_id: str | None = None):
             context["error"] = "This run has no recorded attempts."
         else:
             attempts = data["attempts"]
-            first = _attempt_summary(attempts[0])
-            last = _attempt_summary(attempts[-1])
-            context["first"] = first
-            context["last"] = last
-            context["num_attempts"] = len(attempts)
-            context["deltas"] = {
-                "mean_entropy": _delta(last, first, "mean_entropy"),
-                "scalar_score": _delta(last, first, "scalar_score"),
-                "fragile_count": _delta(last, first, "fragile_count"),
-                "boundary_count": _delta(last, first, "boundary_count"),
-                "confident_count": _delta(last, first, "confident_count"),
-                "total_cost_usd": _delta(last, first, "total_cost_usd"),
-                "total_input_tokens": _delta(last, first, "total_input_tokens"),
-                "total_output_tokens": _delta(last, first, "total_output_tokens"),
-            }
+            candidates = [_candidate_summary(g) for g in _group_candidates(attempts)]
+            best_index = _select_best(candidates)
+            candidates[0]["is_seed"] = True
+            candidates[best_index]["is_best"] = True
+            seed, best = candidates[0], candidates[best_index]
+            context.update(
+                seed=seed,
+                best=best,
+                candidates=candidates,
+                num_attempts=len(attempts),
+                num_candidates=len(candidates),
+                best_is_seed=(best_index == 0),
+                deltas={
+                    key: _delta(best, seed, key)
+                    for key in (
+                        "mean_score",
+                        "mean_entropy",
+                        "fragile_count",
+                        "boundary_count",
+                        "confident_count",
+                        "mean_input_tokens",
+                        "mean_output_tokens",
+                        "mean_cost_usd",
+                    )
+                },
+            )
 
     return request.app.state.templates.TemplateResponse(request, "before_after.html", context)
 
