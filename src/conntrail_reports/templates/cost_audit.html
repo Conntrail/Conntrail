@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Conntrail cost audit</title>
+  <style>{{ css }}</style>
+</head>
+<body>
+  <header class="report-header">
+    <div class="brand">Conntrail</div>
+    <h1>LLM cost audit</h1>
+    <p class="subtitle">
+      What your agent spent, and what it may have wasted. Derived from
+      {{ data.scanned_traces }} trace(s); source: {{ data.source }}.
+    </p>
+    <p class="generated">Generated {{ data.generated_at }}</p>
+  </header>
+
+  <section class="totals">
+    <div class="stat">
+      <span class="stat-value">{{ "{:,}".format(data.totals.input_tokens) }}</span>
+      <span class="stat-label">input tokens</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value">{{ "{:,}".format(data.totals.output_tokens) }}</span>
+      <span class="stat-label">output tokens</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value">
+        {% if data.totals.cache_hit_ratio is not none %}{{ "%.0f%%"|format(data.totals.cache_hit_ratio * 100) }}{% else %}—{% endif %}
+      </span>
+      <span class="stat-label">cache hit ratio</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value">${{ "%.4f"|format(data.totals.total_cost_usd) }}</span>
+      <span class="stat-label">estimated cost</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value">{{ data.totals.warning_count }}</span>
+      <span class="stat-label">warnings</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Per-node summary</h2>
+    {% if data.nodes %}
+    <table>
+      <thead>
+        <tr>
+          <th>Node</th><th>Traces</th><th>LLM calls</th><th>Input tok</th>
+          <th>Cache hit</th><th>Output tok</th><th>Est. cost</th>
+          <th>Mean cost</th><th>Mean latency</th><th>Warnings</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for n in data.nodes %}
+        <tr>
+          <td>{{ n.node_id }}</td>
+          <td>{{ n.trace_count }}</td>
+          <td>{{ n.llm_call_count or "—" }}</td>
+          <td>{{ n.input_tokens or "—" }}</td>
+          <td>{% if n.cache_hit_ratio is not none %}{{ "%.0f%%"|format(n.cache_hit_ratio * 100) }}{% else %}—{% endif %}</td>
+          <td>{{ n.output_tokens or "—" }}</td>
+          <td>{% if n.total_cost_usd %}${{ "%.4f"|format(n.total_cost_usd) }}{% else %}—{% endif %}</td>
+          <td>{% if n.mean_cost_usd is not none %}${{ "%.6f"|format(n.mean_cost_usd) }}{% else %}—{% endif %}</td>
+          <td>{% if n.mean_latency_ms is not none %}{{ "%.1f"|format(n.mean_latency_ms) }} ms{% else %}—{% endif %}</td>
+          <td>{{ n.cost_warning_count or "—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No cost telemetry in this trace set.</p>
+    {% endif %}
+  </section>
+
+  <section>
+    <h2>Findings by dimension</h2>
+    <p class="subtitle">Each finding is derived from signals the SDK already
+    measured. Nothing here is auto-applied.</p>
+    <ul class="findings">
+      {% for f in data.findings %}
+      <li class="finding">
+        <div class="finding-head">
+          <strong>{{ f.dimension }}</strong>
+          <span class="pill {% if f.warning_count %}pill-warning{% else %}pill-info{% endif %}">
+            {{ f.warning_count }} warning{{ "" if f.warning_count == 1 else "s" }} · {{ f.info_count }} info
+          </span>
+        </div>
+        <p class="finding-q">{{ f.question }}</p>
+        {% if f.examples %}
+        <ul class="finding-examples">
+          {% for ex in f.examples %}
+          <li>
+            <span class="ex-node">{{ ex.node_id }}</span> — {{ ex.evidence }}
+            <br><em>{{ ex.recommendation }}</em>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="finding-q muted">No findings in this dimension.</p>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  {% if data.shared_prompt_blocks %}
+  <section>
+    <h2>Shared instruction blocks across nodes</h2>
+    <p class="subtitle">The same instruction block (by content fingerprint) is
+    sent by multiple nodes — a shared, cacheable prefix candidate.</p>
+    <table>
+      <thead><tr><th>Block hash</th><th>Nodes</th><th>Occurrences</th></tr></thead>
+      <tbody>
+        {% for b in data.shared_prompt_blocks %}
+        <tr>
+          <td><code>{{ b.hash }}</code></td>
+          <td>{{ b.node_ids|join(", ") }}</td>
+          <td>{{ b.occurrences }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  <footer>
+    <p>{{ data.price_disclaimer }}</p>
+    <p class="muted">Conntrail reports what it measured and nothing it did not.
+    Findings recommend, never mutate.</p>
+  </footer>
+</body>
+</html>
