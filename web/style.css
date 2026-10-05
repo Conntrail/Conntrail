@@ -1,0 +1,201 @@
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --fg: #1a1a1a;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --accent: #2563eb;
+  --confident: #16a34a;
+  --boundary: #d97706;
+  --fragile: #dc2626;
+  --panel: #f9fafb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115;
+    --fg: #e5e7eb;
+    --muted: #9ca3af;
+    --border: #2a2d34;
+    --accent: #60a5fa;
+    --panel: #161a20;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+.topbar .brand { font-weight: 700; font-size: 1.1rem; color: var(--fg); text-decoration: none; }
+.topbar nav a { color: var(--muted); text-decoration: none; margin-right: 1rem; }
+.topbar nav a:hover { color: var(--accent); }
+
+main { max-width: 920px; margin: 0 auto; padding: 1.5rem; }
+
+.hero { padding: 2.5rem 0 1rem; }
+.hero h1 { font-size: 1.85rem; line-height: 1.3; margin: 0 0 1rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.lede { color: var(--muted); font-size: 1.05rem; }
+
+h2 { margin-top: 2.5rem; }
+h3 { font-size: 1rem; }
+.subtitle { color: var(--muted); margin-top: -0.5rem; }
+
+.scenario-picker { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 1.5rem; }
+.scenario-picker button {
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.scenario-picker button.active { border-color: var(--accent); color: var(--accent); }
+
+.stage { display: grid; gap: 1rem; }
+
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  background: var(--panel);
+}
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; }
+.panel-label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.node-id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; color: var(--muted); }
+
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  margin: 0.75rem 0;
+}
+
+.route-row { display: flex; align-items: center; gap: 0.6rem; }
+.arrow { color: var(--muted); }
+.route {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.perturb {
+  justify-self: start;
+  padding: 0.6rem 1.4rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.perturb:disabled { opacity: 0.5; cursor: default; }
+
+.variants h3 { margin-bottom: 0.5rem; }
+.variant-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+@media (max-width: 700px) { .variant-grid { grid-template-columns: 1fr; } }
+.variant {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: var(--panel);
+}
+.variant .variant-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.variant .variant-text { margin: 0.4rem 0; font-size: 0.9rem; }
+.variant .variant-route {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+}
+.variant.changed { border-color: var(--fragile); }
+
+.results { margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1.5rem; }
+.result-top { display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; }
+
+.gauge-wrap { position: relative; width: 120px; height: 120px; flex: none; }
+.gauge { width: 120px; height: 120px; transform: rotate(-90deg); }
+.gauge-track { fill: none; stroke: var(--border); stroke-width: 10; }
+.gauge-value {
+  fill: none;
+  stroke: var(--confident);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 326.7;
+  stroke-dashoffset: 326.7;
+  transition: stroke-dashoffset 0.7s ease, stroke 0.3s ease;
+}
+.gauge-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.gauge-score { font-size: 1.6rem; font-weight: 700; }
+.gauge-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.verdict { flex: 1; min-width: 240px; }
+.counterfactual { font-size: 1.05rem; }
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--muted);
+}
+.badge-confident { background: var(--confident); }
+.badge-boundary { background: var(--boundary); }
+.badge-fragile { background: var(--fragile); }
+
+.note { color: var(--muted); font-size: 0.9rem; }
+
+.attribution { margin-top: 1.5rem; }
+.attr-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+.attr-table th, .attr-table td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+.attr-table th { color: var(--muted); font-weight: 600; }
+.attr-table tr.flip { background: color-mix(in srgb, var(--fragile) 8%, transparent); }
+.attr-driver { margin-top: 0.75rem; }
+
+.cost-line { color: var(--muted); font-size: 0.85rem; margin-top: 1rem; }
+
+.how ol { padding-left: 1.2rem; }
+.how code { background: color-mix(in srgb, var(--fg) 8%, transparent); padding: 0.1rem 0.3rem; border-radius: 4px; font-size: 0.85rem; }
+.disclaimer { color: var(--muted); font-size: 0.9rem; border-left: 3px solid var(--border); padding-left: 0.8rem; }
+
+.experimental {
+  margin-top: 2.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.experimental a { color: var(--accent); }
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+}

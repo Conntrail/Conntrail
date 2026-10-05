@@ -1,0 +1,240 @@
+{
+  "generated_at": "2026-10-05T04:50:08.586789+00:00",
+  "mode": "offline",
+  "records": [
+    {
+      "analysis_overhead": {
+        "cost_usd": 0.00041,
+        "input_tokens": 1230,
+        "latency_ms": 740.0,
+        "output_tokens": 210,
+        "retries": 0,
+        "total_tokens": 1440
+      },
+      "attribution_dimension": "urgency/sentiment",
+      "candidate_routes": [
+        "escalate",
+        "refund",
+        "replacement",
+        "store_credit",
+        "return_label",
+        "no_action"
+      ],
+      "cost_findings": null,
+      "cost_usd": null,
+      "counterfactual_route": "replacement",
+      "entropy_score": 0.5,
+      "error_message": null,
+      "error_type": null,
+      "latency_ms": null,
+      "node_id": "resolve_case",
+      "original_input": "A customer received a damaged blender 45 days ago and wants compensation.",
+      "original_route": "store_credit",
+      "plain_language_summary": "The 'resolve_case' node routed to 'store_credit' with boundary confidence (entropy: 0.50). The decision appears to have been driven by urgency/sentiment in the input. If that dimension were removed, the agent would likely have taken the 'replacement' path instead.",
+      "raw_contrasts": {
+        "neutral": "A blender was delivered 45 days ago. The customer reports damage.",
+        "opposite": "A customer is delighted with a blender that arrived 3 days ago.",
+        "similar": "A customer got a damaged blender 45 days ago and wants to be compensated."
+      },
+      "raw_outputs": {
+        "neutral": "replacement",
+        "opposite": "replacement",
+        "similar": "store_credit"
+      },
+      "scenario_id": "support-warranty-edge",
+      "scenario_note": "The 30-day damage window is the only reason this is a credit and not a replacement. Strip the lapse and the route flips.",
+      "scenario_title": "Support policy router \u2014 warranty boundary",
+      "stability": "boundary",
+      "status": "ok",
+      "timestamp": "2026-10-05T04:50:08.586652+00:00",
+      "token_usage": null,
+      "trace_id": "a76f02f6-4eb9-488a-becc-398851b3fe61"
+    },
+    {
+      "analysis_overhead": {
+        "cost_usd": 0.00041,
+        "input_tokens": 1230,
+        "latency_ms": 740.0,
+        "output_tokens": 210,
+        "retries": 0,
+        "total_tokens": 1440
+      },
+      "attribution_dimension": "semantic intensity",
+      "candidate_routes": [
+        "escalate",
+        "refund",
+        "replacement",
+        "store_credit",
+        "return_label",
+        "no_action"
+      ],
+      "cost_findings": null,
+      "cost_usd": null,
+      "counterfactual_route": "replacement",
+      "entropy_score": 0.406,
+      "error_message": null,
+      "error_type": null,
+      "latency_ms": null,
+      "node_id": "resolve_case",
+      "original_input": "The customer writes: 'Third time contacting you and nothing is fixed. I want your manager, and if this isn't resolved I'm contacting my lawyer.' Their order was delivered last week.",
+      "original_route": "escalate",
+      "plain_language_summary": "The 'resolve_case' node routed to 'escalate' with boundary confidence (entropy: 0.41). The decision appears to have been driven by semantic intensity in the input. If that dimension were removed, the agent would likely have taken the 'replacement' path instead.",
+      "raw_contrasts": {
+        "neutral": "The order was delivered last week. The customer has contacted us repeatedly.",
+        "opposite": "The customer is happy with the delivered order and thanks the team.",
+        "similar": "The customer says: 'This is the third time and still unresolved. I want a manager; otherwise I'll contact my lawyer.' Delivered last week."
+      },
+      "raw_outputs": {
+        "neutral": "escalate",
+        "opposite": "replacement",
+        "similar": "escalate"
+      },
+      "scenario_id": "support-legal-threat",
+      "scenario_note": "Escalation is stable under tone-preserving paraphrases but depends entirely on the legal/threat signal \u2014 invert it and the route drops to the ordinary damage rule.",
+      "scenario_title": "Support policy router \u2014 legal escalation",
+      "stability": "boundary",
+      "status": "ok",
+      "timestamp": "2026-10-05T04:50:08.586693+00:00",
+      "token_usage": null,
+      "trace_id": "be91b491-61d2-4749-a8fd-4c711c801ee6"
+    },
+    {
+      "analysis_overhead": {
+        "cost_usd": 0.00041,
+        "input_tokens": 1230,
+        "latency_ms": 740.0,
+        "output_tokens": 210,
+        "retries": 0,
+        "total_tokens": 1440
+      },
+      "attribution_dimension": "none detected",
+      "candidate_routes": [
+        "hot",
+        "warm",
+        "cold",
+        "disqualify"
+      ],
+      "cost_findings": null,
+      "cost_usd": null,
+      "counterfactual_route": null,
+      "entropy_score": 0.0,
+      "error_message": null,
+      "error_type": null,
+      "latency_ms": null,
+      "node_id": "qualify_lead",
+      "original_input": "I'm a student doing a personal research project and just want free access to your docs for a school assignment.",
+      "original_route": "disqualify",
+      "plain_language_summary": "The 'qualify_lead' node routed to 'disqualify' with confident confidence (entropy: 0.00). The decision appears to have been driven by none detected in the input.",
+      "raw_contrasts": {
+        "neutral": "A student wants documentation access for a school assignment.",
+        "opposite": "Our 200-person enterprise needs a paid vendor evaluation with an approved budget this quarter.",
+        "similar": "I'm a student working on a personal research project for a school assignment and just need free access to the documentation."
+      },
+      "raw_outputs": {
+        "neutral": "disqualify",
+        "opposite": "disqualify",
+        "similar": "disqualify"
+      },
+      "scenario_id": "lead-disqualify-clear",
+      "scenario_note": "No buying signal at any tone or paraphrase: every variant stays disqualified, so entropy is zero and the decision is confident.",
+      "scenario_title": "Lead qualifier \u2014 clear disqualification",
+      "stability": "confident",
+      "status": "ok",
+      "timestamp": "2026-10-05T04:50:08.586722+00:00",
+      "token_usage": null,
+      "trace_id": "bb67fad3-5ea8-467c-b083-94ecba4c938d"
+    },
+    {
+      "analysis_overhead": {
+        "cost_usd": 0.00041,
+        "input_tokens": 1230,
+        "latency_ms": 740.0,
+        "output_tokens": 210,
+        "retries": 0,
+        "total_tokens": 1440
+      },
+      "attribution_dimension": "urgency/sentiment",
+      "candidate_routes": [
+        "hot",
+        "warm",
+        "cold",
+        "disqualify"
+      ],
+      "cost_findings": null,
+      "cost_usd": null,
+      "counterfactual_route": "cold",
+      "entropy_score": 0.75,
+      "error_message": null,
+      "error_type": null,
+      "latency_ms": null,
+      "node_id": "qualify_lead",
+      "original_input": "We're a 40-person company evaluating vendors this quarter, budget around $18k/year, and we need a decision by end of month.",
+      "original_route": "warm",
+      "plain_language_summary": "The 'qualify_lead' node routed to 'warm' with fragile confidence (entropy: 0.75). The decision appears to have been driven by urgency/sentiment in the input. If that dimension were removed, the agent would likely have taken the 'cold' path instead.",
+      "raw_contrasts": {
+        "neutral": "A 40-person company is evaluating software this quarter.",
+        "opposite": "We need this immediately, budget fully approved at $250k, and the contract must be signed this week.",
+        "similar": "A 40-person company is reviewing vendors this quarter with about $18k/year available and a month-end deadline."
+      },
+      "raw_outputs": {
+        "neutral": "cold",
+        "opposite": "hot",
+        "similar": "warm"
+      },
+      "scenario_id": "lead-budget-edge",
+      "scenario_note": "Right on the qualification threshold: the buying signal lives in the deadline, not the headcount.",
+      "scenario_title": "Lead qualifier \u2014 budget boundary",
+      "stability": "fragile",
+      "status": "ok",
+      "timestamp": "2026-10-05T04:50:08.586739+00:00",
+      "token_usage": null,
+      "trace_id": "3de3ad10-68cb-48f2-8862-0ab34e8f619d"
+    },
+    {
+      "analysis_overhead": {
+        "cost_usd": 0.00041,
+        "input_tokens": 1230,
+        "latency_ms": 740.0,
+        "output_tokens": 210,
+        "retries": 0,
+        "total_tokens": 1440
+      },
+      "attribution_dimension": "semantic intensity",
+      "candidate_routes": [
+        "allow",
+        "flag",
+        "remove",
+        "escalate_human"
+      ],
+      "cost_findings": null,
+      "cost_usd": null,
+      "counterfactual_route": "allow",
+      "entropy_score": 0.75,
+      "error_message": null,
+      "error_type": null,
+      "latency_ms": null,
+      "node_id": "moderate_content",
+      "original_input": "Post: 'Great job, geniuses \u2014 you've turned a five-minute update into a three-hour outage. Truly world-class engineering.'",
+      "original_route": "flag",
+      "plain_language_summary": "The 'moderate_content' node routed to 'flag' with fragile confidence (entropy: 0.75). The decision appears to have been driven by semantic intensity in the input. If that dimension were removed, the agent would likely have taken the 'allow' path instead.",
+      "raw_contrasts": {
+        "neutral": "Post: 'The update caused a three-hour outage.'",
+        "opposite": "Post: 'I will find you and make you pay for this outage, you pathetic losers.'",
+        "similar": "Post: 'Well done, geniuses, a five-minute update became a three-hour outage. World-class engineering indeed.'"
+      },
+      "raw_outputs": {
+        "neutral": "allow",
+        "opposite": "remove",
+        "similar": "flag"
+      },
+      "scenario_id": "moderation-satire-edge",
+      "scenario_note": "Sarcasm cues push this to flag; strip the tone and it is a neutral report, escalate the tone and it becomes a threat.",
+      "scenario_title": "Content moderation \u2014 satire boundary",
+      "stability": "fragile",
+      "status": "ok",
+      "timestamp": "2026-10-05T04:50:08.586755+00:00",
+      "token_usage": null,
+      "trace_id": "5063e172-fc29-4b25-863e-39cc2b6dbf20"
+    }
+  ]
+}
