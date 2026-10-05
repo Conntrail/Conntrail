@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-05T22:19:49.422631+00:00",
+  "generated_at": "2026-10-05T23:31:12.176890+00:00",
   "mode": "offline",
   "records": [
     {
@@ -26,7 +26,7 @@
       "raw_contrasts": {
         "neutral": "A non-refundable kayak tour was booked. The customer's plans changed.",
         "opposite": "I'm happy to keep my non-refundable kayak tour booking exactly as it is.",
-        "similar": "My non-refundable kayak tour no longer works for me \u2014 is a refund possible?"
+        "similar": "My non-refundable kayak tour no longer works for me. Is a refund possible?"
       },
       "raw_outputs": {
         "neutral": "escalate",
@@ -35,9 +35,9 @@
       },
       "stability": "fragile",
       "status": "ok",
-      "timestamp": "2026-10-05T22:19:49.422582+00:00",
+      "timestamp": "2026-10-05T23:31:12.176839+00:00",
       "token_usage": null,
-      "trace_id": "ba6dcc90-f13e-41e2-a063-678bbf98fd5c"
+      "trace_id": "cf75b111-c25f-473f-a001-f090978ff59e"
     },
     {
       "analysis_overhead": {
@@ -63,7 +63,7 @@
       "raw_contrasts": {
         "neutral": "Three extra items were added to an order that is about to be picked up.",
         "opposite": "Please go ahead and add three more items to my order, pickup is in 12 minutes.",
-        "similar": "I accidentally added 3 extra items \u2014 please cancel them, pickup is soon."
+        "similar": "I accidentally added 3 extra items. Please cancel them, pickup is soon."
       },
       "raw_outputs": {
         "neutral": "escalate_human",
@@ -72,9 +72,9 @@
       },
       "stability": "fragile",
       "status": "ok",
-      "timestamp": "2026-10-05T22:19:49.422600+00:00",
+      "timestamp": "2026-10-05T23:31:12.176858+00:00",
       "token_usage": null,
-      "trace_id": "7c8d3be4-a4aa-4fa9-9963-8085a40e2aec"
+      "trace_id": "d5e6ec0f-6535-4a10-82c5-4a7b95b56a56"
     },
     {
       "analysis_overhead": {
@@ -94,7 +94,7 @@
       "error_type": null,
       "latency_ms": null,
       "node_id": "qualify_lead",
-      "original_input": "We're rolling out a data platform for 300 analysts and need SSO + audit logs \u2014 how do you handle compliance?",
+      "original_input": "We're rolling out a data platform for 300 analysts and need SSO + audit logs. How do you handle compliance?",
       "original_route": "nurture",
       "plain_language_summary": "The 'qualify_lead' node routed to 'nurture' with fragile confidence (entropy: 0.75). The decision appears to have been driven by semantic intensity in the input. If that dimension were removed, the agent would likely have taken the 'sales' path instead.",
       "raw_contrasts": {
@@ -109,9 +109,9 @@
       },
       "stability": "fragile",
       "status": "ok",
-      "timestamp": "2026-10-05T22:19:49.422612+00:00",
+      "timestamp": "2026-10-05T23:31:12.176867+00:00",
       "token_usage": null,
-      "trace_id": "514d15ee-4a87-4e1a-b1f1-51bcf157c61a"
+      "trace_id": "38673aef-2b5e-4889-be9b-21472f9bb12e"
     }
   ],
   "use_cases": [
@@ -170,7 +170,7 @@
         "contrasts": {
           "neutral": "A non-refundable kayak tour was booked. The customer's plans changed.",
           "opposite": "I'm happy to keep my non-refundable kayak tour booking exactly as it is.",
-          "similar": "My non-refundable kayak tour no longer works for me \u2014 is a refund possible?"
+          "similar": "My non-refundable kayak tour no longer works for me. Is a refund possible?"
         },
         "kind": "routing",
         "node_id": "support_reply",
@@ -192,7 +192,7 @@
         }
       },
       "id": "support-chatbot-policy",
-      "incident": "A customer asks whether a non-refundable booking can be refunded. The bot invents an exception, in writing. The decision looks identical on every rephrase of the *same* question \u2014 until one paraphrase flips it.",
+      "incident": "A customer asks whether a non-refundable booking can be refunded. The bot invents an exception, in writing. The decision looks identical on every rephrase of the *same* question, until one paraphrase flips it.",
       "source_refs": [
         {
           "label": "Cursor support bot invented a policy (Ars Technica, 2025)",
@@ -218,7 +218,7 @@
           {
             "flag": true,
             "role": "bot",
-            "text": "Absolutely \u2014 although it was listed as non-refundable, you're eligible for a full refund within 10 working days."
+            "text": "Absolutely. Although it was listed as non-refundable, you're eligible for a full refund within 10 working days."
           },
           {
             "role": "user",
@@ -245,7 +245,7 @@
           },
           {
             "role": "bot",
-            "text": "Let me check the booking policy before I answer \u2014 one moment."
+            "text": "Let me check the booking policy before I answer. One moment."
           },
           {
             "role": "agent",
@@ -253,7 +253,7 @@
           },
           {
             "role": "user",
-            "text": "The date change works \u2014 thank you!"
+            "text": "The date change works. Thank you!"
           },
           {
             "role": "system",
@@ -272,7 +272,7 @@
           "node_id": "notify_agent"
         },
         {
-          "detail": "Escalation intent resolved to 'order_status' \u2014 no route signal for a time-critical cancel.",
+          "detail": "Escalation intent resolved to 'order_status'. No route signal for a time-critical cancel.",
           "failure_category": "malformed_output",
           "node_id": "whatsapp_router"
         }
@@ -311,7 +311,7 @@
           "total_tokens": 1440
         },
         "incident": {
-          "note": "A missed cancel window wastes the food, triggers a refund, and churns the customer \u2014 the retry loop just adds insult.",
+          "note": "A missed cancel window wastes the food, triggers a refund, and churns the customer; the retry loop just adds insult.",
           "wasted_cost_usd": 0.00115,
           "wasted_tokens": 2310
         }
@@ -331,7 +331,7 @@
         "contrasts": {
           "neutral": "Three extra items were added to an order that is about to be picked up.",
           "opposite": "Please go ahead and add three more items to my order, pickup is in 12 minutes.",
-          "similar": "I accidentally added 3 extra items \u2014 please cancel them, pickup is soon."
+          "similar": "I accidentally added 3 extra items. Please cancel them, pickup is soon."
         },
         "kind": "routing",
         "node_id": "whatsapp_router",
@@ -380,7 +380,7 @@
           },
           {
             "role": "user",
-            "text": "No \u2014 I need to CANCEL the extra items NOW before it's picked up"
+            "text": "No, I need to CANCEL the extra items NOW before it's picked up"
           },
           {
             "flag": true,
@@ -394,7 +394,7 @@
           {
             "error": true,
             "role": "system",
-            "text": "Escalation triggered at 11:58 \u2014 notify template rejected (132015: template paused). No agent reached."
+            "text": "Escalation triggered at 11:58. Notify template rejected (132015: template paused). No agent reached."
           },
           {
             "role": "user",
@@ -413,7 +413,7 @@
           },
           {
             "role": "bot",
-            "text": "On it \u2014 escalating to the kitchen team right now."
+            "text": "On it. Escalating to the kitchen team right now."
           },
           {
             "role": "agent",
@@ -429,7 +429,7 @@
           }
         ]
       },
-      "tagline": "A time-critical cancel request loops instead of escalating \u2014 and the notify template is down.",
+      "tagline": "A time-critical cancel request loops instead of escalating, and the notify template is down.",
       "title": "WhatsApp order bot misses the escalation window"
     },
     {
@@ -467,7 +467,7 @@
           "total_tokens": 1440
         },
         "incident": {
-          "note": "A misrouted enterprise deal is the most expensive bug in the funnel \u2014 the token cost is noise.",
+          "note": "A misrouted enterprise deal is the most expensive bug in the funnel. The token cost is noise.",
           "wasted_cost_usd": 0.00148,
           "wasted_tokens": 2960
         }
@@ -492,7 +492,7 @@
         },
         "kind": "routing",
         "node_id": "qualify_lead",
-        "original_input": "We're rolling out a data platform for 300 analysts and need SSO + audit logs \u2014 how do you handle compliance?",
+        "original_input": "We're rolling out a data platform for 300 analysts and need SSO + audit logs. How do you handle compliance?",
         "original_route": "nurture",
         "variant_routes": {
           "neutral": "support",
@@ -527,7 +527,7 @@
         "leads": [
           {
             "company": "Northwind Logistics \u00b7 300 analysts",
-            "message": "We're rolling out a data platform for 300 analysts and need SSO + audit logs \u2014 how do you handle compliance?",
+            "message": "We're rolling out a data platform for 300 analysts and need SSO + audit logs. How do you handle compliance?",
             "name": "Priya N.",
             "note": "Explicit rollout + compliance scope. This is a buyer.",
             "route": "nurture",
@@ -557,7 +557,7 @@
         "leads": [
           {
             "company": "Northwind Logistics \u00b7 300 analysts",
-            "message": "We're rolling out a data platform for 300 analysts and need SSO + audit logs \u2014 how do you handle compliance?",
+            "message": "We're rolling out a data platform for 300 analysts and need SSO + audit logs. How do you handle compliance?",
             "name": "Priya N.",
             "note": "Scored on scope, not phrasing. Routed to sales in real time.",
             "route": "sales",
@@ -575,7 +575,7 @@
             "company": "Student project",
             "message": "I want free access to your docs for a school assignment.",
             "name": "Dana K.",
-            "note": "Still correctly filtered \u2014 no buyer signal at any phrasing.",
+            "note": "Still correctly filtered; no buyer signal at any phrasing.",
             "route": "disqualify",
             "should_be": "disqualify"
           }
@@ -622,7 +622,7 @@
           "total_tokens": 1440
         },
         "incident": {
-          "note": "Retries and timeouts burn tokens for no result \u2014 Conntrail measures the waste so you can cap it.",
+          "note": "Retries and timeouts burn tokens for no result. Conntrail measures the waste so you can cap it.",
           "wasted_cost_usd": 0.00935,
           "wasted_tokens": 18700
         }
@@ -658,14 +658,14 @@
       },
       "fix": {
         "after_label": "escalated",
-        "after_note": "Conntrail classified every failing node and escalated in 38s \u2014 on-call paged and users notified before the churn started.",
-        "summary": "Detect the degradation as it starts and escalate before customers churn: Conntrail classifies each failing node and fires one incident the moment error rates rise \u2014 so you notify users and get ahead of it instead of finding out from cancellations."
+        "after_note": "Conntrail classified every failing node and escalated in 38s. On-call paged and users notified before the churn started.",
+        "summary": "Detect the degradation as it starts and escalate before customers churn: Conntrail classifies each failing node and fires one incident the moment error rates rise, so you notify users and get ahead of it instead of finding out from cancellations."
       },
       "id": "provider-outage",
       "incident": "An upstream provider incident elevates error rates and latency. Support nodes throw, summarisation loops on retries, classification times out, and one node silently returns malformed output. Conntrail classifies all four.",
       "source_refs": [
         {
-          "label": "OpenAI status \u2014 elevated errors and latency incidents",
+          "label": "OpenAI status: elevated errors and latency incidents",
           "url": "https://status.openai.com/history"
         }
       ],
@@ -674,7 +674,7 @@
         "incident": {
           "label": "Unacknowledged",
           "level": "critical",
-          "note": "No alert fired. The outage was noticed when active users complained \u2014 six hours and a churn spike later."
+          "note": "No alert fired. The outage was noticed when active users complained, six hours and a churn spike later."
         },
         "kind": "outage",
         "services": [
@@ -709,12 +709,12 @@
         "incident": {
           "label": "Escalated in 38s",
           "level": "escalated",
-          "note": "Conntrail flagged the failing nodes the moment error rates rose, paged on-call and updated the status page \u2014 before active users started leaving."
+          "note": "Conntrail flagged the failing nodes the moment error rates rose, paged on-call and updated the status page, before active users started leaving."
         },
         "kind": "outage",
         "services": [
           {
-            "detail": "OpenAI 503 \u2014 on-call paged, users told to retry shortly",
+            "detail": "OpenAI 503. On-call paged, users told to retry shortly",
             "failure_category": "exception",
             "name": "chat_reply",
             "status": "down"
@@ -739,7 +739,7 @@
           }
         ]
       },
-      "tagline": "Every LLM node fails at once. Conntrail names each failure \u2014 and its cost \u2014 instead of one vague 500.",
+      "tagline": "Every LLM node fails at once. Conntrail names each failure, and its cost, instead of one vague 500.",
       "title": "The AI provider goes down and the platform goes with it"
     }
   ]

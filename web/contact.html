@@ -3,14 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Contact — Conntrail</title>
-  <meta name="description" content="Request an extended Conntrail demo, managed-enterprise early access, or ask a question.">
+  <meta name="color-scheme" content="light dark">
+  <title>Contact · Conntrail</title>
+  <meta name="description" content="Request an extended Conntrail demo, managed enterprise early access, or ask a question.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
   <header class="topbar">
-    <a class="brand" href="index.html">Conntrail</a>
-    <nav>
+    <a class="brand" href="index.html">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--accent-soft)" stroke="var(--accent)" stroke-opacity=".4"/>
+        <circle cx="9" cy="16" r="2.6" fill="var(--accent)"/>
+        <path d="M11.5 16H23" stroke="var(--confident)" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M11.5 16c4.5 0 6-6.5 10.5-6.5" stroke="var(--boundary)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+        <path d="M11.5 16c4.5 0 6 6.5 10.5 6.5" stroke="var(--fragile)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+        <circle cx="24.5" cy="16" r="1.9" fill="var(--confident)"/>
+        <circle cx="24.5" cy="9.5" r="1.9" fill="var(--boundary)"/>
+        <circle cx="24.5" cy="22.5" r="1.9" fill="var(--fragile)"/>
+      </svg>
+      Conntrail
+    </a>
+    <nav aria-label="Main">
       <a href="use-cases.html">Use cases</a>
       <a href="how-it-works.html">How it works</a>
       <a href="pricing.html">Pricing</a>
@@ -18,31 +34,72 @@
     </nav>
   </header>
 
-  <main>
+  <main id="main">
     <section class="contact">
-      <h1>Talk to us</h1>
-      <p class="subtitle">Extended demo, managed-enterprise early access, or a question. We reply by email.</p>
-      <form id="contact-form" class="contact-form" novalidate>
-        <div class="field-row">
-          <label>Name<input type="text" name="name" required autocomplete="name"></label>
-          <label>Email<input type="email" name="email" required autocomplete="email"></label>
-        </div>
-        <label>Company <span class="opt">(optional)</span><input type="text" name="company" autocomplete="organization"></label>
-        <label>What do you need?<textarea name="message" rows="6" required placeholder="A managed demo, early access, a question about the reports…"></textarea></label>
-        <label class="hp" aria-hidden="true">Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
-        <button class="btn btn-primary" type="submit" id="contact-submit">Send</button>
-        <p class="form-status" id="form-status" role="status"></p>
-      </form>
-      <p class="contact-alt">
-        Prefer email? <a href="mailto:hello@ibzie.dev">hello@ibzie.dev</a>
-      </p>
+      <div class="page-head grid-bg">
+        <p class="eyebrow">Contact</p>
+        <h1>Talk to us</h1>
+        <p class="subtitle">Extended demo, managed enterprise early access, or a question. We reply by email.</p>
+      </div>
+
+      <div class="contact-grid">
+        <form id="contact-form" class="contact-form" novalidate>
+          <div class="field-row">
+            <label>Name<input type="text" name="name" required autocomplete="name"></label>
+            <label>Email<input type="email" name="email" required autocomplete="email"></label>
+          </div>
+          <label><span>Company <span class="opt">(optional)</span></span><input type="text" name="company" autocomplete="organization"></label>
+          <label>What do you need?<textarea name="message" rows="6" required placeholder="A managed demo, early access, a question about the reports..."></textarea></label>
+          <label class="hp" aria-hidden="true">Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+          <button class="btn btn-primary" type="submit" id="contact-submit">Send message
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+          <p class="form-status" id="form-status" role="status"></p>
+        </form>
+
+        <aside class="contact-alt">
+          <h2>Prefer email?</h2>
+          <p>Write to <a href="mailto:hello@ibzie.dev">hello@ibzie.dev</a> and we will come back to you.</p>
+          <p>For managed enterprise, mention your expected trace volume and preferred region; that speeds up the scoping call.</p>
+        </aside>
+      </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <span>Conntrail — evidence, not guesswork.</span>
-    <span class="exp-link"><strong>Experimental:</strong> traces feeding prompt optimization →
-      <a href="https://github.com/anomalyco/conntrail" rel="noopener">docs</a></span>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a class="brand" href="index.html">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+            <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--accent-soft)" stroke="var(--accent)" stroke-opacity=".4"/>
+            <circle cx="9" cy="16" r="2.6" fill="var(--accent)"/>
+            <path d="M11.5 16H23" stroke="var(--confident)" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M11.5 16c4.5 0 6-6.5 10.5-6.5" stroke="var(--boundary)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+            <path d="M11.5 16c4.5 0 6 6.5 10.5 6.5" stroke="var(--fragile)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+            <circle cx="24.5" cy="16" r="1.9" fill="var(--confident)"/>
+            <circle cx="24.5" cy="9.5" r="1.9" fill="var(--boundary)"/>
+            <circle cx="24.5" cy="22.5" r="1.9" fill="var(--fragile)"/>
+          </svg>
+          Conntrail
+        </a>
+        <p class="footer-tag">Evidence, not guesswork.</p>
+      </div>
+      <div class="footer-col">
+        <h2>Site</h2>
+        <ul>
+          <li><a href="use-cases.html">Use cases</a></li>
+          <li><a href="how-it-works.html">How it works</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h2>Status</h2>
+        <p class="exp-link"><strong>Experimental:</strong> traces feeding prompt optimization.
+          <a href="https://github.com/anomalyco/conntrail" rel="noopener">Read the docs</a></p>
+      </div>
+    </div>
+    <p class="footer-fine">Conntrail · Self-hosted, open source · Managed enterprise in progress</p>
   </footer>
 
   <script src="app.js"></script>

@@ -3,14 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>How it works — Conntrail</title>
+  <meta name="color-scheme" content="light dark">
+  <title>How it works · Conntrail</title>
   <meta name="description" content="The contrast generator, the entropy score, the attribution table, and the failure classifier behind Conntrail.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
   <header class="topbar">
-    <a class="brand" href="index.html">Conntrail</a>
-    <nav>
+    <a class="brand" href="index.html">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--accent-soft)" stroke="var(--accent)" stroke-opacity=".4"/>
+        <circle cx="9" cy="16" r="2.6" fill="var(--accent)"/>
+        <path d="M11.5 16H23" stroke="var(--confident)" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M11.5 16c4.5 0 6-6.5 10.5-6.5" stroke="var(--boundary)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+        <path d="M11.5 16c4.5 0 6 6.5 10.5 6.5" stroke="var(--fragile)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+        <circle cx="24.5" cy="16" r="1.9" fill="var(--confident)"/>
+        <circle cx="24.5" cy="9.5" r="1.9" fill="var(--boundary)"/>
+        <circle cx="24.5" cy="22.5" r="1.9" fill="var(--fragile)"/>
+      </svg>
+      Conntrail
+    </a>
+    <nav aria-label="Main">
       <a href="use-cases.html">Use cases</a>
       <a href="how-it-works.html">How it works</a>
       <a href="pricing.html">Pricing</a>
@@ -18,49 +34,116 @@
     </nav>
   </header>
 
-  <main>
+  <main id="main">
     <section class="how">
-      <h1>How it works</h1>
-      <p class="subtitle">Four steps, then one classifier. Nothing here is inferred beyond what was measured.</p>
+      <div class="page-head grid-bg">
+        <p class="eyebrow">The method</p>
+        <h1>How it works</h1>
+        <p class="subtitle">Four steps, then one classifier. Nothing here is inferred beyond what was measured.</p>
+      </div>
+
       <div class="how-grid">
-        <ol>
-          <li>Your node runs normally — output is unchanged.</li>
-          <li>A cheap model (never your agent's model) generates three perturbed variants of the input: <strong>similar</strong>, <strong>neutral</strong>, <strong>opposite</strong>.</li>
-          <li>Conntrail re-runs the node on all four inputs and computes normalized Shannon entropy over the routing outcomes: <code>0.0</code> = never flips, <code>1.0</code> = maximally unstable.</li>
-          <li>A fixed priority table names which dimension flipped the route first (<code>opposite &gt; neutral &gt; similar</code>) and the counterfactual route — "remove that dimension and the agent takes the other path."</li>
+        <ol class="steps">
+          <li>
+            <p>Your node runs normally. Output, latency and cost are unchanged; Conntrail observes the routing decision, it never rewrites it.</p>
+          </li>
+          <li>
+            <p>A cheap model, never your agent's model, generates three perturbed variants of the input: <strong>similar</strong>, <strong>neutral</strong> and <strong>opposite</strong>.</p>
+          </li>
+          <li>
+            <p>Conntrail re-runs the node on all four inputs and computes normalized Shannon entropy over the routing outcomes: <code>0.0</code> means the route never flips, <code>1.0</code> means maximally unstable.</p>
+          </li>
+          <li>
+            <p>A fixed priority table names which dimension flipped the route first (<code>opposite</code>, then <code>neutral</code>, then <code>similar</code>) together with the counterfactual route: remove that dimension and the agent takes the other path.</p>
+          </li>
         </ol>
+
         <aside class="how-aside">
           <h3>It also classifies failures</h3>
           <p>From signals the SDK already produces, not invented categories:</p>
           <ul class="cat-list">
-            <li><code>exception</code> — the node raised</li>
-            <li><code>retry_loop</code> — rate-limit retries exhausted</li>
-            <li><code>timeout</code> — exceeded the time budget</li>
-            <li><code>malformed_output</code> — no route signal found</li>
-            <li><code>none</code> — a clean, resolved success</li>
+            <li><span class="cat-chip cat-exception">exception</span><span class="cat-desc">the node raised</span></li>
+            <li><span class="cat-chip cat-retry_loop">retry_loop</span><span class="cat-desc">retries exhausted</span></li>
+            <li><span class="cat-chip cat-timeout">timeout</span><span class="cat-desc">time budget exceeded</span></li>
+            <li><span class="cat-chip cat-malformed_output">malformed_output</span><span class="cat-desc">no route signal found</span></li>
+            <li><span class="cat-chip cat-none">none</span><span class="cat-desc">clean, resolved success</span></li>
           </ul>
         </aside>
       </div>
 
-      <h2>Stability labels</h2>
+      <div class="section-head" style="margin-top: var(--s7);">
+        <p class="eyebrow">Reading the score</p>
+        <h2>Stability labels</h2>
+      </div>
       <div class="label-grid">
-        <div class="label-card"><span class="badge badge-confident">confident</span><p>Entropy below 0.25. The route holds under every perturbation.</p></div>
-        <div class="label-card"><span class="badge badge-boundary">boundary</span><p>Entropy 0.25–0.60. One dimension can move the decision.</p></div>
-        <div class="label-card"><span class="badge badge-fragile">fragile</span><p>Entropy above 0.60. The route is a coin-flip on phrasing.</p></div>
+        <div class="label-card">
+          <span class="badge badge-confident">confident</span>
+          <p>Entropy below 0.25. The route holds under every perturbation.</p>
+          <div class="label-meter" aria-hidden="true">
+            <div class="meter"><span style="left:0; width:25%; background: var(--confident);"></span></div>
+            <div class="meter-scale"><span>0.00</span><span>0.25</span></div>
+          </div>
+        </div>
+        <div class="label-card">
+          <span class="badge badge-boundary">boundary</span>
+          <p>Entropy 0.25 to 0.60. One dimension can move the decision.</p>
+          <div class="label-meter" aria-hidden="true">
+            <div class="meter"><span style="left:25%; width:35%; background: var(--boundary);"></span></div>
+            <div class="meter-scale"><span>0.25</span><span>0.60</span></div>
+          </div>
+        </div>
+        <div class="label-card">
+          <span class="badge badge-fragile">fragile</span>
+          <p>Entropy above 0.60. The route is a coin flip on phrasing.</p>
+          <div class="label-meter" aria-hidden="true">
+            <div class="meter"><span style="left:60%; width:40%; background: var(--fragile);"></span></div>
+            <div class="meter-scale"><span>0.60</span><span>1.00</span></div>
+          </div>
+        </div>
       </div>
 
-      <p class="disclaimer">
-        Conntrail shows measurements. It recommends nothing and claims no savings —
-        every figure is derived from a signal it captured. Findings recommend; the
-        human decides.
+      <p class="disclaimer" style="margin-top: var(--s7);">
+        <strong>Conntrail shows measurements.</strong> It recommends nothing and claims no
+        savings: every figure is derived from a signal it captured. Findings recommend;
+        the human decides.
       </p>
     </section>
   </main>
 
   <footer class="site-footer">
-    <span>Conntrail — evidence, not guesswork.</span>
-    <span class="exp-link"><strong>Experimental:</strong> traces feeding prompt optimization →
-      <a href="https://github.com/anomalyco/conntrail" rel="noopener">docs</a></span>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a class="brand" href="index.html">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+            <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--accent-soft)" stroke="var(--accent)" stroke-opacity=".4"/>
+            <circle cx="9" cy="16" r="2.6" fill="var(--accent)"/>
+            <path d="M11.5 16H23" stroke="var(--confident)" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M11.5 16c4.5 0 6-6.5 10.5-6.5" stroke="var(--boundary)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+            <path d="M11.5 16c4.5 0 6 6.5 10.5 6.5" stroke="var(--fragile)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+            <circle cx="24.5" cy="16" r="1.9" fill="var(--confident)"/>
+            <circle cx="24.5" cy="9.5" r="1.9" fill="var(--boundary)"/>
+            <circle cx="24.5" cy="22.5" r="1.9" fill="var(--fragile)"/>
+          </svg>
+          Conntrail
+        </a>
+        <p class="footer-tag">Evidence, not guesswork.</p>
+      </div>
+      <div class="footer-col">
+        <h2>Site</h2>
+        <ul>
+          <li><a href="use-cases.html">Use cases</a></li>
+          <li><a href="how-it-works.html">How it works</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h2>Status</h2>
+        <p class="exp-link"><strong>Experimental:</strong> traces feeding prompt optimization.
+          <a href="https://github.com/anomalyco/conntrail" rel="noopener">Read the docs</a></p>
+      </div>
+    </div>
+    <p class="footer-fine">Conntrail · Self-hosted, open source · Managed enterprise in progress</p>
   </footer>
 
   <script src="app.js"></script>

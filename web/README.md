@@ -17,8 +17,9 @@ web/
   how-it-works.html     method, stability labels, failure classifier
   pricing.html          self-hosted vs managed enterprise
   contact.html          contact form
-  style.css             visual language shared with the dashboard
+  style.css             visual language: one stylesheet, custom properties, light/dark
   app.js                per-page init: demo (use-cases), contact form, active nav
+  favicon.svg           brand mark (one node, three routes)
   data/demo.json        frozen use-case fixtures (generated, committed)
   functions/api/contact.js   Cloudflare Pages Function for the contact form
   dev_server.py         zero-dependency local preview (static + form stub)

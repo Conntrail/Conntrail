@@ -1,17 +1,17 @@
 """
-Website demo use cases — four real-world failure patterns, each shown as an
+Website demo use cases: four real-world failure patterns, each shown as an
 incident, Conntrail's detection of it, and the fix.
 
 These are *fictional companies* illustrating *real failure patterns*. The
 `source_refs` on each case point at the public incidents the pattern is drawn
 from. Nothing here implies those companies use or endorse Conntrail.
 
-Entropy, stability, attribution and the counterfactual are NOT hand-set here —
+Entropy, stability, attribution and the counterfactual are NOT hand-set here:
 `build_fixtures.py` derives them from the route labels with the SDK's own
 `routing_entropy` and attribution table. This module supplies only the inputs
 and the frozen route decisions.
 
-Hand-written for the demo — not imported from anywhere.
+Hand-written for the demo, not imported from anywhere.
 """
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ SUPPORT_CHATBOT: dict[str, Any] = {
     "incident": (
         "A customer asks whether a non-refundable booking can be refunded. The bot "
         "invents an exception, in writing. The decision looks identical on every "
-        "rephrase of the *same* question — until one paraphrase flips it."
+        "rephrase of the *same* question, until one paraphrase flips it."
     ),
     "surface": {
         "kind": "web_chat",
@@ -38,7 +38,7 @@ SUPPORT_CHATBOT: dict[str, Any] = {
             {"role": "user", "text": "I booked a non-refundable kayak tour but my plans changed. Can I get my money back?"},
             {
                 "role": "bot",
-                "text": "Absolutely — although it was listed as non-refundable, you're eligible for a full refund within 10 working days.",
+                "text": "Absolutely. Although it was listed as non-refundable, you're eligible for a full refund within 10 working days.",
                 "flag": True,
             },
             {"role": "user", "text": "Are you sure? The booking says non-refundable."},
@@ -55,12 +55,12 @@ SUPPORT_CHATBOT: dict[str, Any] = {
         "channel_label": "Website support chat",
         "transcript": [
             {"role": "user", "text": "I booked a non-refundable kayak tour but my plans changed. Can I get my money back?"},
-            {"role": "bot", "text": "Let me check the booking policy before I answer — one moment."},
+            {"role": "bot", "text": "Let me check the booking policy before I answer. One moment."},
             {
                 "role": "agent",
                 "text": "Hi, this is Maya. That fare is non-refundable, but I can move your booking to another date free of charge, or issue a credit. Which would you prefer?",
             },
-            {"role": "user", "text": "The date change works — thank you!"},
+            {"role": "user", "text": "The date change works. Thank you!"},
             {"role": "system", "text": "Policy checked, human confirmed. No fabricated exception."},
         ],
     },
@@ -71,7 +71,7 @@ SUPPORT_CHATBOT: dict[str, Any] = {
         "original_route": "policy_answer",
         "candidate_routes": ["policy_answer", "escalate", "decline"],
         "contrasts": {
-            "similar": "My non-refundable kayak tour no longer works for me — is a refund possible?",
+            "similar": "My non-refundable kayak tour no longer works for me. Is a refund possible?",
             "neutral": "A non-refundable kayak tour was booked. The customer's plans changed.",
             "opposite": "I'm happy to keep my non-refundable kayak tour booking exactly as it is.",
         },
@@ -116,7 +116,7 @@ WHATSAPP_ORDER: dict[str, Any] = {
     "title": "WhatsApp order bot misses the escalation window",
     "company": "Saffron Kitchen (fictional)",
     "channel": "whatsapp",
-    "tagline": "A time-critical cancel request loops instead of escalating — and the notify template is down.",
+    "tagline": "A time-critical cancel request loops instead of escalating, and the notify template is down.",
     "incident": (
         "A customer added items by mistake and needs them cancelled before pickup. "
         "The bot keeps answering order-status questions and never escalates. "
@@ -130,10 +130,10 @@ WHATSAPP_ORDER: dict[str, Any] = {
         "transcript": [
             {"role": "user", "text": "I added 3 extra items by mistake 😭 can you cancel them? pickup is in 12 min"},
             {"role": "bot", "text": "I can help with your order! You can track your order status in the app.", "flag": True},
-            {"role": "user", "text": "No — I need to CANCEL the extra items NOW before it's picked up"},
+            {"role": "user", "text": "No, I need to CANCEL the extra items NOW before it's picked up"},
             {"role": "bot", "text": "Thanks for reaching out! Your order is being prepared. You can view details in the app.", "flag": True},
             {"role": "user", "text": "let me talk to a human agent"},
-            {"role": "system", "text": "Escalation triggered at 11:58 — notify template rejected (132015: template paused). No agent reached.", "error": True},
+            {"role": "system", "text": "Escalation triggered at 11:58. Notify template rejected (132015: template paused). No agent reached.", "error": True},
             {"role": "user", "text": "this is useless, I'm done with this app"},
         ],
     },
@@ -143,7 +143,7 @@ WHATSAPP_ORDER: dict[str, Any] = {
         "contact": "Saffron Kitchen",
         "transcript": [
             {"role": "user", "text": "I added 3 extra items by mistake 😭 can you cancel them? pickup is in 12 min"},
-            {"role": "bot", "text": "On it — escalating to the kitchen team right now."},
+            {"role": "bot", "text": "On it. Escalating to the kitchen team right now."},
             {"role": "agent", "text": "Hi! I've removed the 3 extra items. Your total is updated and pickup is still on schedule. ✅"},
             {"role": "user", "text": "lifesaver, thank you!"},
             {"role": "system", "text": "Escalated in 6s · template failure failed over to SMS · cancel completed before pickup."},
@@ -156,7 +156,7 @@ WHATSAPP_ORDER: dict[str, Any] = {
         "original_route": "order_status",
         "candidate_routes": ["order_status", "escalate_human", "cancel_order"],
         "contrasts": {
-            "similar": "I accidentally added 3 extra items — please cancel them, pickup is soon.",
+            "similar": "I accidentally added 3 extra items. Please cancel them, pickup is soon.",
             "neutral": "Three extra items were added to an order that is about to be picked up.",
             "opposite": "Please go ahead and add three more items to my order, pickup is in 12 minutes.",
         },
@@ -168,13 +168,13 @@ WHATSAPP_ORDER: dict[str, Any] = {
     },
     "alerts": [
         {"node_id": "notify_agent", "failure_category": "retry_loop", "detail": "WhatsApp template send failed 132015 (template paused); 4 retries exhausted."},
-        {"node_id": "whatsapp_router", "failure_category": "malformed_output", "detail": "Escalation intent resolved to 'order_status' — no route signal for a time-critical cancel."},
+        {"node_id": "whatsapp_router", "failure_category": "malformed_output", "detail": "Escalation intent resolved to 'order_status'. No route signal for a time-critical cancel."},
     ],
     "cost": {
         "incident": {
             "wasted_tokens": 2310,
             "wasted_cost_usd": 0.00115,
-            "note": "A missed cancel window wastes the food, triggers a refund, and churns the customer — the retry loop just adds insult.",
+            "note": "A missed cancel window wastes the food, triggers a refund, and churns the customer; the retry loop just adds insult.",
         },
         "analysis_overhead": {"total_tokens": 1440, "cost_usd": 0.00041, "latency_ms": 810.0},
     },
@@ -216,7 +216,7 @@ LEADGEN_MISROUTE: dict[str, Any] = {
             {
                 "name": "Priya N.",
                 "company": "Northwind Logistics · 300 analysts",
-                "message": "We're rolling out a data platform for 300 analysts and need SSO + audit logs — how do you handle compliance?",
+                "message": "We're rolling out a data platform for 300 analysts and need SSO + audit logs. How do you handle compliance?",
                 "route": "nurture",
                 "should_be": "sales",
                 "note": "Explicit rollout + compliance scope. This is a buyer.",
@@ -246,7 +246,7 @@ LEADGEN_MISROUTE: dict[str, Any] = {
             {
                 "name": "Priya N.",
                 "company": "Northwind Logistics · 300 analysts",
-                "message": "We're rolling out a data platform for 300 analysts and need SSO + audit logs — how do you handle compliance?",
+                "message": "We're rolling out a data platform for 300 analysts and need SSO + audit logs. How do you handle compliance?",
                 "route": "sales",
                 "should_be": "sales",
                 "note": "Scored on scope, not phrasing. Routed to sales in real time.",
@@ -265,14 +265,14 @@ LEADGEN_MISROUTE: dict[str, Any] = {
                 "message": "I want free access to your docs for a school assignment.",
                 "route": "disqualify",
                 "should_be": "disqualify",
-                "note": "Still correctly filtered — no buyer signal at any phrasing.",
+                "note": "Still correctly filtered; no buyer signal at any phrasing.",
             },
         ],
     },
     "detection": {
         "kind": "routing",
         "node_id": "qualify_lead",
-        "original_input": "We're rolling out a data platform for 300 analysts and need SSO + audit logs — how do you handle compliance?",
+        "original_input": "We're rolling out a data platform for 300 analysts and need SSO + audit logs. How do you handle compliance?",
         "original_route": "nurture",
         "candidate_routes": ["sales", "nurture", "support", "disqualify"],
         "contrasts": {
@@ -290,7 +290,7 @@ LEADGEN_MISROUTE: dict[str, Any] = {
         "incident": {
             "wasted_tokens": 2960,
             "wasted_cost_usd": 0.00148,
-            "note": "A misrouted enterprise deal is the most expensive bug in the funnel — the token cost is noise.",
+            "note": "A misrouted enterprise deal is the most expensive bug in the funnel. The token cost is noise.",
         },
         "analysis_overhead": {"total_tokens": 1440, "cost_usd": 0.00041, "latency_ms": 690.0},
     },
@@ -320,7 +320,7 @@ PROVIDER_OUTAGE: dict[str, Any] = {
     "title": "The AI provider goes down and the platform goes with it",
     "company": "Meridian Travel (fictional)",
     "channel": "outage",
-    "tagline": "Every LLM node fails at once. Conntrail names each failure — and its cost — instead of one vague 500.",
+    "tagline": "Every LLM node fails at once. Conntrail names each failure, and its cost, instead of one vague 500.",
     "incident": (
         "An upstream provider incident elevates error rates and latency. Support "
         "nodes throw, summarisation loops on retries, classification times out, and "
@@ -332,7 +332,7 @@ PROVIDER_OUTAGE: dict[str, Any] = {
         "incident": {
             "level": "critical",
             "label": "Unacknowledged",
-            "note": "No alert fired. The outage was noticed when active users complained — six hours and a churn spike later.",
+            "note": "No alert fired. The outage was noticed when active users complained, six hours and a churn spike later.",
         },
         "services": [
             {"name": "chat_reply", "status": "down", "failure_category": "exception", "detail": "OpenAI 503 across 41 calls"},
@@ -347,10 +347,10 @@ PROVIDER_OUTAGE: dict[str, Any] = {
         "incident": {
             "level": "escalated",
             "label": "Escalated in 38s",
-            "note": "Conntrail flagged the failing nodes the moment error rates rose, paged on-call and updated the status page — before active users started leaving.",
+            "note": "Conntrail flagged the failing nodes the moment error rates rose, paged on-call and updated the status page, before active users started leaving.",
         },
         "services": [
-            {"name": "chat_reply", "status": "down", "failure_category": "exception", "detail": "OpenAI 503 — on-call paged, users told to retry shortly"},
+            {"name": "chat_reply", "status": "down", "failure_category": "exception", "detail": "OpenAI 503. On-call paged, users told to retry shortly"},
             {"name": "summarize_ticket", "status": "degraded", "failure_category": "retry_loop", "detail": "Retry loop capped; incident escalated, queue draining"},
             {"name": "classify_intent", "status": "degraded", "failure_category": "timeout", "detail": "Timeout alert fired at 38s; traffic shed to protect active users"},
             {"name": "recommend_offer", "status": "degraded", "failure_category": "malformed_output", "detail": "Malformed route flagged; safe default served"},
@@ -373,7 +373,7 @@ PROVIDER_OUTAGE: dict[str, Any] = {
         "incident": {
             "wasted_tokens": 18700,
             "wasted_cost_usd": 0.00935,
-            "note": "Retries and timeouts burn tokens for no result — Conntrail measures the waste so you can cap it.",
+            "note": "Retries and timeouts burn tokens for no result. Conntrail measures the waste so you can cap it.",
         },
         "analysis_overhead": {"total_tokens": 1440, "cost_usd": 0.00041, "latency_ms": 880.0},
     },
@@ -381,17 +381,17 @@ PROVIDER_OUTAGE: dict[str, Any] = {
         "summary": (
             "Detect the degradation as it starts and escalate before customers churn: "
             "Conntrail classifies each failing node and fires one incident the moment "
-            "error rates rise — so you notify users and get ahead of it instead of "
+            "error rates rise, so you notify users and get ahead of it instead of "
             "finding out from cancellations."
         ),
         "after_label": "escalated",
         "after_note": (
-            "Conntrail classified every failing node and escalated in 38s — on-call "
+            "Conntrail classified every failing node and escalated in 38s. On-call "
             "paged and users notified before the churn started."
         ),
     },
     "source_refs": [
-        {"label": "OpenAI status — elevated errors and latency incidents", "url": "https://status.openai.com/history"},
+        {"label": "OpenAI status: elevated errors and latency incidents", "url": "https://status.openai.com/history"},
     ],
 }
 

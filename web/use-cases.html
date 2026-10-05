@@ -3,14 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Use cases — Conntrail</title>
+  <meta name="color-scheme" content="light dark">
+  <title>Use cases · Conntrail</title>
   <meta name="description" content="Four real-world AI failure patterns, each shown as an incident, Conntrail's detection of it, and the fix.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
   <header class="topbar">
-    <a class="brand" href="index.html">Conntrail</a>
-    <nav>
+    <a class="brand" href="index.html">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--accent-soft)" stroke="var(--accent)" stroke-opacity=".4"/>
+        <circle cx="9" cy="16" r="2.6" fill="var(--accent)"/>
+        <path d="M11.5 16H23" stroke="var(--confident)" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M11.5 16c4.5 0 6-6.5 10.5-6.5" stroke="var(--boundary)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+        <path d="M11.5 16c4.5 0 6 6.5 10.5 6.5" stroke="var(--fragile)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+        <circle cx="24.5" cy="16" r="1.9" fill="var(--confident)"/>
+        <circle cx="24.5" cy="9.5" r="1.9" fill="var(--boundary)"/>
+        <circle cx="24.5" cy="22.5" r="1.9" fill="var(--fragile)"/>
+      </svg>
+      Conntrail
+    </a>
+    <nav aria-label="Main">
       <a href="use-cases.html">Use cases</a>
       <a href="how-it-works.html">How it works</a>
       <a href="pricing.html">Pricing</a>
@@ -18,25 +34,63 @@
     </nav>
   </header>
 
-  <main>
+  <main id="main">
     <section class="use-cases">
-      <h1>What this looks like when it breaks</h1>
-      <p class="subtitle">
-        Four failure patterns from the wild. Pick one — the traces are precomputed,
-        so nothing here calls a model or costs anything to view. Use
-        <strong>Incident / After fix</strong> to see the user-facing outcome on both sides.
-      </p>
+      <div class="page-head grid-bg">
+        <p class="eyebrow">The evidence</p>
+        <h1>What this looks like when it breaks</h1>
+        <p class="subtitle">
+          Four failure patterns from the wild. Pick one; the traces are precomputed,
+          so nothing here calls a model or costs anything to view. Then flip
+          <strong>Incident / After fix</strong> to see the same moment once the routing is repaired.
+        </p>
+      </div>
 
-      <div class="case-picker" id="case-picker" role="tablist"></div>
+      <div class="case-picker" id="case-picker" role="tablist" aria-label="Use cases"></div>
 
       <article class="case" id="case-view" aria-live="polite"></article>
+
+      <noscript>
+        <p class="subtitle">The interactive case viewer needs JavaScript. The method, stability
+        labels and pricing pages read fine without it.</p>
+      </noscript>
     </section>
   </main>
 
   <footer class="site-footer">
-    <span>Conntrail — evidence, not guesswork.</span>
-    <span class="exp-link"><strong>Experimental:</strong> traces feeding prompt optimization →
-      <a href="https://github.com/anomalyco/conntrail" rel="noopener">docs</a></span>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a class="brand" href="index.html">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+            <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="var(--accent-soft)" stroke="var(--accent)" stroke-opacity=".4"/>
+            <circle cx="9" cy="16" r="2.6" fill="var(--accent)"/>
+            <path d="M11.5 16H23" stroke="var(--confident)" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M11.5 16c4.5 0 6-6.5 10.5-6.5" stroke="var(--boundary)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+            <path d="M11.5 16c4.5 0 6 6.5 10.5 6.5" stroke="var(--fragile)" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+            <circle cx="24.5" cy="16" r="1.9" fill="var(--confident)"/>
+            <circle cx="24.5" cy="9.5" r="1.9" fill="var(--boundary)"/>
+            <circle cx="24.5" cy="22.5" r="1.9" fill="var(--fragile)"/>
+          </svg>
+          Conntrail
+        </a>
+        <p class="footer-tag">Evidence, not guesswork.</p>
+      </div>
+      <div class="footer-col">
+        <h2>Site</h2>
+        <ul>
+          <li><a href="use-cases.html">Use cases</a></li>
+          <li><a href="how-it-works.html">How it works</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h2>Status</h2>
+        <p class="exp-link"><strong>Experimental:</strong> traces feeding prompt optimization.
+          <a href="https://github.com/anomalyco/conntrail" rel="noopener">Read the docs</a></p>
+      </div>
+    </div>
+    <p class="footer-fine">Conntrail · Self-hosted, open source · Managed enterprise in progress</p>
   </footer>
 
   <script src="app.js"></script>
