@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How it works — Conntrail</title>
+  <meta name="description" content="The contrast generator, the entropy score, the attribution table, and the failure classifier behind Conntrail.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">Conntrail</a>
+    <nav>
+      <a href="use-cases.html">Use cases</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="how">
+      <h1>How it works</h1>
+      <p class="subtitle">Four steps, then one classifier. Nothing here is inferred beyond what was measured.</p>
+      <div class="how-grid">
+        <ol>
+          <li>Your node runs normally — output is unchanged.</li>
+          <li>A cheap model (never your agent's model) generates three perturbed variants of the input: <strong>similar</strong>, <strong>neutral</strong>, <strong>opposite</strong>.</li>
+          <li>Conntrail re-runs the node on all four inputs and computes normalized Shannon entropy over the routing outcomes: <code>0.0</code> = never flips, <code>1.0</code> = maximally unstable.</li>
+          <li>A fixed priority table names which dimension flipped the route first (<code>opposite &gt; neutral &gt; similar</code>) and the counterfactual route — "remove that dimension and the agent takes the other path."</li>
+        </ol>
+        <aside class="how-aside">
+          <h3>It also classifies failures</h3>
+          <p>From signals the SDK already produces, not invented categories:</p>
+          <ul class="cat-list">
+            <li><code>exception</code> — the node raised</li>
+            <li><code>retry_loop</code> — rate-limit retries exhausted</li>
+            <li><code>timeout</code> — exceeded the time budget</li>
+            <li><code>malformed_output</code> — no route signal found</li>
+            <li><code>none</code> — a clean, resolved success</li>
+          </ul>
+        </aside>
+      </div>
+
+      <h2>Stability labels</h2>
+      <div class="label-grid">
+        <div class="label-card"><span class="badge badge-confident">confident</span><p>Entropy below 0.25. The route holds under every perturbation.</p></div>
+        <div class="label-card"><span class="badge badge-boundary">boundary</span><p>Entropy 0.25–0.60. One dimension can move the decision.</p></div>
+        <div class="label-card"><span class="badge badge-fragile">fragile</span><p>Entropy above 0.60. The route is a coin-flip on phrasing.</p></div>
+      </div>
+
+      <p class="disclaimer">
+        Conntrail shows measurements. It recommends nothing and claims no savings —
+        every figure is derived from a signal it captured. Findings recommend; the
+        human decides.
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>Conntrail — evidence, not guesswork.</span>
+    <span class="exp-link"><strong>Experimental:</strong> traces feeding prompt optimization →
+      <a href="https://github.com/anomalyco/conntrail" rel="noopener">docs</a></span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

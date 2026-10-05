@@ -219,3 +219,10 @@ __marimo__/
 
 # Demo artifacts (demo.sh)
 .demo/
+
+# Local monetization working doc (keep local, do not commit)
+Epics.md
+
+# Cloudflare Pages local dev (wrangler)
+web/node_modules/
+web/.wrangler/

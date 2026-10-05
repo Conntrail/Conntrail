@@ -3,121 +3,83 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Conntrail — Is this routing decision stable?</title>
-  <meta name="description" content="Conntrail tells you why your agent decided what it decided, and how close it was to deciding something else.">
+  <title>Conntrail — why your agent decided, and how close it was to deciding otherwise</title>
+  <meta name="description" content="Conntrail tells you why your agent decided what it decided, and how close it was to deciding something else. Stability under semantic perturbation, for agents and AI processes.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="/">Conntrail</a>
+    <a class="brand" href="index.html">Conntrail</a>
     <nav>
-      <a href="#demo">Demo</a>
-      <a href="#how">How it works</a>
-      <a href="#experimental">Experimental</a>
+      <a href="use-cases.html">Use cases</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="contact.html">Contact</a>
     </nav>
   </header>
 
   <main>
     <section class="hero">
+      <p class="eyebrow">Stability under semantic perturbation</p>
       <h1>Conntrail tells you <em>why</em> your agent decided what it decided — and how close it was to deciding something else.</h1>
       <p class="lede">
-        Most tracing tools record what happened. Conntrail measures how brittle
-        the decision was: whether a paraphrase, a tone change, or a semantic
-        inversion of the same input would have sent the agent down a different
-        route — and which dimension flipped it first.
+        Most tracing tools record what happened. Conntrail measures how brittle the
+        decision was: whether a paraphrase, a tone change, or a semantic inversion of
+        the same input would have sent the agent down a different route — and which
+        dimension flipped it first.
       </p>
-    </section>
-
-    <section id="demo" class="demo">
-      <h2>Is this routing decision stable?</h2>
-      <p class="subtitle">
-        Pick a precomputed scenario. Nothing here calls a model — the traces are
-        frozen fixtures, so the page is instant and costs nothing to serve.
-      </p>
-
-      <div class="scenario-picker" id="scenario-picker" role="tablist"></div>
-
-      <div class="stage">
-        <div class="panel">
-          <div class="panel-head">
-            <span class="panel-label">Original input</span>
-            <span class="node-id" id="node-id"></span>
-          </div>
-          <pre id="original-input"></pre>
-          <div class="route-row">
-            <span class="arrow">→</span>
-            <span class="route" id="original-route"></span>
-          </div>
-        </div>
-
-        <button class="perturb" id="perturb">Perturb</button>
-
-        <div class="variants" id="variants" hidden>
-          <h3>Contrast variants</h3>
-          <div class="variant-grid" id="variant-grid"></div>
-        </div>
-      </div>
-
-      <div class="results" id="results" hidden>
-        <div class="result-top">
-          <div class="gauge-wrap">
-            <svg class="gauge" viewBox="0 0 120 120" aria-hidden="true">
-              <circle class="gauge-track" cx="60" cy="60" r="52"></circle>
-              <circle class="gauge-value" id="gauge-value" cx="60" cy="60" r="52"></circle>
-            </svg>
-            <div class="gauge-center">
-              <span class="gauge-score" id="entropy-score">0.00</span>
-              <span class="gauge-label">entropy</span>
-            </div>
-          </div>
-          <div class="verdict">
-            <span class="badge" id="stability-badge">—</span>
-            <p class="counterfactual" id="counterfactual"></p>
-            <p class="note" id="note"></p>
-          </div>
-        </div>
-
-        <div class="attribution">
-          <h3>Attribution — which dimension flipped the route first</h3>
-          <table class="attr-table">
-            <thead>
-              <tr><th>Variant</th><th>Route</th><th>Changed?</th></tr>
-            </thead>
-            <tbody id="attr-body"></tbody>
-          </table>
-          <p class="attr-driver">
-            First flip: <strong id="attribution-dimension">—</strong>
-          </p>
-        </div>
-
-        <p class="cost-line" id="cost-line"></p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="use-cases.html">See it on real failures</a>
+        <a class="btn" href="contact.html">Request a managed demo</a>
       </div>
     </section>
 
-    <section id="how" class="how">
-      <h2>How it works</h2>
-      <ol>
-        <li>Your node runs normally — output is unchanged.</li>
-        <li>A cheap model (never your agent's model) generates three perturbed variants of the input: <strong>similar</strong>, <strong>neutral</strong>, <strong>opposite</strong>.</li>
-        <li>Conntrail re-runs the node on all four inputs and computes normalized Shannon entropy over the routing outcomes: <code>0.0</code> = never flips, <code>1.0</code> = maximally unstable.</li>
-        <li>A fixed priority table names which dimension flipped the route first (<code>opposite &gt; neutral &gt; similar</code>) and the counterfactual route.</li>
-      </ol>
-      <p class="disclaimer">
-        This page shows measurements. It recommends nothing and claims no
-        savings — every figure is derived from a signal Conntrail captured.
-      </p>
+    <section class="positioning">
+      <div class="pos-card">
+        <span class="pos-tag">Available now</span>
+        <h2>Self-hosted</h2>
+        <p>Run the SDK, collector and dashboard yourself. Open source, no data leaves your infrastructure. Free.</p>
+        <p class="pos-link"><a href="pricing.html">See pricing →</a></p>
+      </div>
+      <div class="pos-card pos-card-future">
+        <span class="pos-tag pos-tag-future">In progress</span>
+        <h2>Managed enterprise</h2>
+        <p>Hosted collector, retention, SSO and compliance evidence, billed pay-as-you-go or with prepaid credits.</p>
+        <p class="pos-link"><a href="contact.html">Join the early-access list →</a></p>
+      </div>
     </section>
 
-    <section id="experimental" class="experimental">
-      <p>
-        <strong>Experimental:</strong> see how traces feed prompt optimization →
-        <a href="https://github.com/anomalyco/conntrail" rel="noopener">docs</a>.
-      </p>
+    <section class="explore">
+      <h2>Where to go next</h2>
+      <div class="explore-grid">
+        <a class="explore-card" href="use-cases.html">
+          <h3>Use cases</h3>
+          <p>Four real-world failure patterns — a support bot inventing a policy, a WhatsApp order lost to a missed escalation, a lead-gen bot burying a buyer, and a provider outage that goes unnoticed until users churn.</p>
+          <span class="explore-cta">See the incidents →</span>
+        </a>
+        <a class="explore-card" href="how-it-works.html">
+          <h3>How it works</h3>
+          <p>The contrast generator, the entropy score, the attribution table — and the failure classifier that names what went wrong.</p>
+          <span class="explore-cta">Read the method →</span>
+        </a>
+        <a class="explore-card" href="pricing.html">
+          <h3>Pricing</h3>
+          <p>Self-hosted today, managed enterprise in progress. Pay-as-you-go or prepaid credits.</p>
+          <span class="explore-cta">See plans →</span>
+        </a>
+        <a class="explore-card" href="contact.html">
+          <h3>Contact</h3>
+          <p>Extended demo, managed-enterprise early access, or a question. We reply by email.</p>
+          <span class="explore-cta">Get in touch →</span>
+        </a>
+      </div>
     </section>
   </main>
 
   <footer class="site-footer">
     <span>Conntrail — evidence, not guesswork.</span>
+    <span class="exp-link"><strong>Experimental:</strong> traces feeding prompt optimization →
+      <a href="https://github.com/anomalyco/conntrail" rel="noopener">docs</a></span>
   </footer>
 
   <script src="app.js"></script>

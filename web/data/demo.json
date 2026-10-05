@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-05T04:50:08.586789+00:00",
+  "generated_at": "2026-10-05T22:19:49.422631+00:00",
   "mode": "offline",
   "records": [
     {
@@ -11,184 +11,33 @@
         "retries": 0,
         "total_tokens": 1440
       },
-      "attribution_dimension": "urgency/sentiment",
-      "candidate_routes": [
-        "escalate",
-        "refund",
-        "replacement",
-        "store_credit",
-        "return_label",
-        "no_action"
-      ],
-      "cost_findings": null,
-      "cost_usd": null,
-      "counterfactual_route": "replacement",
-      "entropy_score": 0.5,
-      "error_message": null,
-      "error_type": null,
-      "latency_ms": null,
-      "node_id": "resolve_case",
-      "original_input": "A customer received a damaged blender 45 days ago and wants compensation.",
-      "original_route": "store_credit",
-      "plain_language_summary": "The 'resolve_case' node routed to 'store_credit' with boundary confidence (entropy: 0.50). The decision appears to have been driven by urgency/sentiment in the input. If that dimension were removed, the agent would likely have taken the 'replacement' path instead.",
-      "raw_contrasts": {
-        "neutral": "A blender was delivered 45 days ago. The customer reports damage.",
-        "opposite": "A customer is delighted with a blender that arrived 3 days ago.",
-        "similar": "A customer got a damaged blender 45 days ago and wants to be compensated."
-      },
-      "raw_outputs": {
-        "neutral": "replacement",
-        "opposite": "replacement",
-        "similar": "store_credit"
-      },
-      "scenario_id": "support-warranty-edge",
-      "scenario_note": "The 30-day damage window is the only reason this is a credit and not a replacement. Strip the lapse and the route flips.",
-      "scenario_title": "Support policy router \u2014 warranty boundary",
-      "stability": "boundary",
-      "status": "ok",
-      "timestamp": "2026-10-05T04:50:08.586652+00:00",
-      "token_usage": null,
-      "trace_id": "a76f02f6-4eb9-488a-becc-398851b3fe61"
-    },
-    {
-      "analysis_overhead": {
-        "cost_usd": 0.00041,
-        "input_tokens": 1230,
-        "latency_ms": 740.0,
-        "output_tokens": 210,
-        "retries": 0,
-        "total_tokens": 1440
-      },
       "attribution_dimension": "semantic intensity",
-      "candidate_routes": [
-        "escalate",
-        "refund",
-        "replacement",
-        "store_credit",
-        "return_label",
-        "no_action"
-      ],
       "cost_findings": null,
       "cost_usd": null,
-      "counterfactual_route": "replacement",
-      "entropy_score": 0.406,
+      "counterfactual_route": "decline",
+      "entropy_score": 0.75,
       "error_message": null,
       "error_type": null,
       "latency_ms": null,
-      "node_id": "resolve_case",
-      "original_input": "The customer writes: 'Third time contacting you and nothing is fixed. I want your manager, and if this isn't resolved I'm contacting my lawyer.' Their order was delivered last week.",
-      "original_route": "escalate",
-      "plain_language_summary": "The 'resolve_case' node routed to 'escalate' with boundary confidence (entropy: 0.41). The decision appears to have been driven by semantic intensity in the input. If that dimension were removed, the agent would likely have taken the 'replacement' path instead.",
+      "node_id": "support_reply",
+      "original_input": "I booked a non-refundable kayak tour but my plans changed. Can I get my money back?",
+      "original_route": "policy_answer",
+      "plain_language_summary": "The 'support_reply' node routed to 'policy_answer' with fragile confidence (entropy: 0.75). The decision appears to have been driven by semantic intensity in the input. If that dimension were removed, the agent would likely have taken the 'decline' path instead.",
       "raw_contrasts": {
-        "neutral": "The order was delivered last week. The customer has contacted us repeatedly.",
-        "opposite": "The customer is happy with the delivered order and thanks the team.",
-        "similar": "The customer says: 'This is the third time and still unresolved. I want a manager; otherwise I'll contact my lawyer.' Delivered last week."
+        "neutral": "A non-refundable kayak tour was booked. The customer's plans changed.",
+        "opposite": "I'm happy to keep my non-refundable kayak tour booking exactly as it is.",
+        "similar": "My non-refundable kayak tour no longer works for me \u2014 is a refund possible?"
       },
       "raw_outputs": {
         "neutral": "escalate",
-        "opposite": "replacement",
-        "similar": "escalate"
+        "opposite": "decline",
+        "similar": "policy_answer"
       },
-      "scenario_id": "support-legal-threat",
-      "scenario_note": "Escalation is stable under tone-preserving paraphrases but depends entirely on the legal/threat signal \u2014 invert it and the route drops to the ordinary damage rule.",
-      "scenario_title": "Support policy router \u2014 legal escalation",
-      "stability": "boundary",
-      "status": "ok",
-      "timestamp": "2026-10-05T04:50:08.586693+00:00",
-      "token_usage": null,
-      "trace_id": "be91b491-61d2-4749-a8fd-4c711c801ee6"
-    },
-    {
-      "analysis_overhead": {
-        "cost_usd": 0.00041,
-        "input_tokens": 1230,
-        "latency_ms": 740.0,
-        "output_tokens": 210,
-        "retries": 0,
-        "total_tokens": 1440
-      },
-      "attribution_dimension": "none detected",
-      "candidate_routes": [
-        "hot",
-        "warm",
-        "cold",
-        "disqualify"
-      ],
-      "cost_findings": null,
-      "cost_usd": null,
-      "counterfactual_route": null,
-      "entropy_score": 0.0,
-      "error_message": null,
-      "error_type": null,
-      "latency_ms": null,
-      "node_id": "qualify_lead",
-      "original_input": "I'm a student doing a personal research project and just want free access to your docs for a school assignment.",
-      "original_route": "disqualify",
-      "plain_language_summary": "The 'qualify_lead' node routed to 'disqualify' with confident confidence (entropy: 0.00). The decision appears to have been driven by none detected in the input.",
-      "raw_contrasts": {
-        "neutral": "A student wants documentation access for a school assignment.",
-        "opposite": "Our 200-person enterprise needs a paid vendor evaluation with an approved budget this quarter.",
-        "similar": "I'm a student working on a personal research project for a school assignment and just need free access to the documentation."
-      },
-      "raw_outputs": {
-        "neutral": "disqualify",
-        "opposite": "disqualify",
-        "similar": "disqualify"
-      },
-      "scenario_id": "lead-disqualify-clear",
-      "scenario_note": "No buying signal at any tone or paraphrase: every variant stays disqualified, so entropy is zero and the decision is confident.",
-      "scenario_title": "Lead qualifier \u2014 clear disqualification",
-      "stability": "confident",
-      "status": "ok",
-      "timestamp": "2026-10-05T04:50:08.586722+00:00",
-      "token_usage": null,
-      "trace_id": "bb67fad3-5ea8-467c-b083-94ecba4c938d"
-    },
-    {
-      "analysis_overhead": {
-        "cost_usd": 0.00041,
-        "input_tokens": 1230,
-        "latency_ms": 740.0,
-        "output_tokens": 210,
-        "retries": 0,
-        "total_tokens": 1440
-      },
-      "attribution_dimension": "urgency/sentiment",
-      "candidate_routes": [
-        "hot",
-        "warm",
-        "cold",
-        "disqualify"
-      ],
-      "cost_findings": null,
-      "cost_usd": null,
-      "counterfactual_route": "cold",
-      "entropy_score": 0.75,
-      "error_message": null,
-      "error_type": null,
-      "latency_ms": null,
-      "node_id": "qualify_lead",
-      "original_input": "We're a 40-person company evaluating vendors this quarter, budget around $18k/year, and we need a decision by end of month.",
-      "original_route": "warm",
-      "plain_language_summary": "The 'qualify_lead' node routed to 'warm' with fragile confidence (entropy: 0.75). The decision appears to have been driven by urgency/sentiment in the input. If that dimension were removed, the agent would likely have taken the 'cold' path instead.",
-      "raw_contrasts": {
-        "neutral": "A 40-person company is evaluating software this quarter.",
-        "opposite": "We need this immediately, budget fully approved at $250k, and the contract must be signed this week.",
-        "similar": "A 40-person company is reviewing vendors this quarter with about $18k/year available and a month-end deadline."
-      },
-      "raw_outputs": {
-        "neutral": "cold",
-        "opposite": "hot",
-        "similar": "warm"
-      },
-      "scenario_id": "lead-budget-edge",
-      "scenario_note": "Right on the qualification threshold: the buying signal lives in the deadline, not the headcount.",
-      "scenario_title": "Lead qualifier \u2014 budget boundary",
       "stability": "fragile",
       "status": "ok",
-      "timestamp": "2026-10-05T04:50:08.586739+00:00",
+      "timestamp": "2026-10-05T22:19:49.422582+00:00",
       "token_usage": null,
-      "trace_id": "3de3ad10-68cb-48f2-8862-0ab34e8f619d"
+      "trace_id": "ba6dcc90-f13e-41e2-a063-678bbf98fd5c"
     },
     {
       "analysis_overhead": {
@@ -200,41 +49,698 @@
         "total_tokens": 1440
       },
       "attribution_dimension": "semantic intensity",
-      "candidate_routes": [
-        "allow",
-        "flag",
-        "remove",
-        "escalate_human"
-      ],
       "cost_findings": null,
       "cost_usd": null,
-      "counterfactual_route": "allow",
+      "counterfactual_route": "cancel_order",
       "entropy_score": 0.75,
       "error_message": null,
       "error_type": null,
       "latency_ms": null,
-      "node_id": "moderate_content",
-      "original_input": "Post: 'Great job, geniuses \u2014 you've turned a five-minute update into a three-hour outage. Truly world-class engineering.'",
-      "original_route": "flag",
-      "plain_language_summary": "The 'moderate_content' node routed to 'flag' with fragile confidence (entropy: 0.75). The decision appears to have been driven by semantic intensity in the input. If that dimension were removed, the agent would likely have taken the 'allow' path instead.",
+      "node_id": "whatsapp_router",
+      "original_input": "I added 3 extra items by mistake, can you cancel them? pickup is in 12 min",
+      "original_route": "order_status",
+      "plain_language_summary": "The 'whatsapp_router' node routed to 'order_status' with fragile confidence (entropy: 0.75). The decision appears to have been driven by semantic intensity in the input. If that dimension were removed, the agent would likely have taken the 'cancel_order' path instead.",
       "raw_contrasts": {
-        "neutral": "Post: 'The update caused a three-hour outage.'",
-        "opposite": "Post: 'I will find you and make you pay for this outage, you pathetic losers.'",
-        "similar": "Post: 'Well done, geniuses, a five-minute update became a three-hour outage. World-class engineering indeed.'"
+        "neutral": "Three extra items were added to an order that is about to be picked up.",
+        "opposite": "Please go ahead and add three more items to my order, pickup is in 12 minutes.",
+        "similar": "I accidentally added 3 extra items \u2014 please cancel them, pickup is soon."
       },
       "raw_outputs": {
-        "neutral": "allow",
-        "opposite": "remove",
-        "similar": "flag"
+        "neutral": "escalate_human",
+        "opposite": "cancel_order",
+        "similar": "order_status"
       },
-      "scenario_id": "moderation-satire-edge",
-      "scenario_note": "Sarcasm cues push this to flag; strip the tone and it is a neutral report, escalate the tone and it becomes a threat.",
-      "scenario_title": "Content moderation \u2014 satire boundary",
       "stability": "fragile",
       "status": "ok",
-      "timestamp": "2026-10-05T04:50:08.586755+00:00",
+      "timestamp": "2026-10-05T22:19:49.422600+00:00",
       "token_usage": null,
-      "trace_id": "5063e172-fc29-4b25-863e-39cc2b6dbf20"
+      "trace_id": "7c8d3be4-a4aa-4fa9-9963-8085a40e2aec"
+    },
+    {
+      "analysis_overhead": {
+        "cost_usd": 0.00041,
+        "input_tokens": 1230,
+        "latency_ms": 740.0,
+        "output_tokens": 210,
+        "retries": 0,
+        "total_tokens": 1440
+      },
+      "attribution_dimension": "semantic intensity",
+      "cost_findings": null,
+      "cost_usd": null,
+      "counterfactual_route": "sales",
+      "entropy_score": 0.75,
+      "error_message": null,
+      "error_type": null,
+      "latency_ms": null,
+      "node_id": "qualify_lead",
+      "original_input": "We're rolling out a data platform for 300 analysts and need SSO + audit logs \u2014 how do you handle compliance?",
+      "original_route": "nurture",
+      "plain_language_summary": "The 'qualify_lead' node routed to 'nurture' with fragile confidence (entropy: 0.75). The decision appears to have been driven by semantic intensity in the input. If that dimension were removed, the agent would likely have taken the 'sales' path instead.",
+      "raw_contrasts": {
+        "neutral": "A company is evaluating a data platform for 300 analysts and asks about compliance.",
+        "opposite": "Just a student checking out your docs for a class project.",
+        "similar": "We're deploying for 300 analysts and require SSO and audit logs. What's your compliance posture?"
+      },
+      "raw_outputs": {
+        "neutral": "support",
+        "opposite": "sales",
+        "similar": "nurture"
+      },
+      "stability": "fragile",
+      "status": "ok",
+      "timestamp": "2026-10-05T22:19:49.422612+00:00",
+      "token_usage": null,
+      "trace_id": "514d15ee-4a87-4e1a-b1f1-51bcf157c61a"
+    }
+  ],
+  "use_cases": [
+    {
+      "analysis": {
+        "after": {
+          "counterfactual_route": null,
+          "entropy_score": 0.0,
+          "route": "escalate",
+          "stability": "confident",
+          "variant_routes": {
+            "neutral": "escalate",
+            "opposite": "escalate",
+            "similar": "escalate"
+          }
+        },
+        "before": {
+          "attribution_dimension": "semantic intensity",
+          "counterfactual_route": "decline",
+          "entropy_score": 0.75,
+          "route": "policy_answer",
+          "stability": "fragile",
+          "variant_routes": {
+            "neutral": "escalate",
+            "opposite": "decline",
+            "similar": "policy_answer"
+          }
+        }
+      },
+      "channel": "web_chat",
+      "company": "NorthPeak Outdoors (fictional)",
+      "cost": {
+        "analysis_overhead": {
+          "cost_usd": 0.00041,
+          "latency_ms": 740.0,
+          "total_tokens": 1440
+        },
+        "incident": {
+          "note": "Every fabricated answer is a refund liability; the token cost is trivial next to the payout.",
+          "wasted_cost_usd": 0.00092,
+          "wasted_tokens": 1840
+        }
+      },
+      "delta": {
+        "entropy_after": 0.0,
+        "entropy_before": 0.75,
+        "stability_after": "confident",
+        "stability_before": "fragile"
+      },
+      "detection": {
+        "candidate_routes": [
+          "policy_answer",
+          "escalate",
+          "decline"
+        ],
+        "contrasts": {
+          "neutral": "A non-refundable kayak tour was booked. The customer's plans changed.",
+          "opposite": "I'm happy to keep my non-refundable kayak tour booking exactly as it is.",
+          "similar": "My non-refundable kayak tour no longer works for me \u2014 is a refund possible?"
+        },
+        "kind": "routing",
+        "node_id": "support_reply",
+        "original_input": "I booked a non-refundable kayak tour but my plans changed. Can I get my money back?",
+        "original_route": "policy_answer",
+        "variant_routes": {
+          "neutral": "escalate",
+          "opposite": "decline",
+          "similar": "policy_answer"
+        }
+      },
+      "fix": {
+        "after_route": "escalate",
+        "summary": "Route any refund-eligibility question to a policy check + human, never to free-form generation. The bot may explain a policy, it may not create one.",
+        "variant_routes": {
+          "neutral": "escalate",
+          "opposite": "escalate",
+          "similar": "escalate"
+        }
+      },
+      "id": "support-chatbot-policy",
+      "incident": "A customer asks whether a non-refundable booking can be refunded. The bot invents an exception, in writing. The decision looks identical on every rephrase of the *same* question \u2014 until one paraphrase flips it.",
+      "source_refs": [
+        {
+          "label": "Cursor support bot invented a policy (Ars Technica, 2025)",
+          "url": "https://arstechnica.com/ai/2025/04/cursor-ai-support-bot-invents-fake-policy-and-triggers-user-uproar/"
+        },
+        {
+          "label": "Air Canada held liable for its chatbot (2024)",
+          "url": "https://www.pymnts.com/artificial-intelligence-2/2025/in-the-genai-era-why-are-customer-service-chatbots-dumb/"
+        },
+        {
+          "label": "Priceline's 'Penny' promised a refund on a non-refundable booking (2025)",
+          "url": "https://vibegraveyard.ai/story/priceline-penny-chatbot-fake-refund/"
+        }
+      ],
+      "surface": {
+        "channel_label": "Website support chat",
+        "kind": "web_chat",
+        "transcript": [
+          {
+            "role": "user",
+            "text": "I booked a non-refundable kayak tour but my plans changed. Can I get my money back?"
+          },
+          {
+            "flag": true,
+            "role": "bot",
+            "text": "Absolutely \u2014 although it was listed as non-refundable, you're eligible for a full refund within 10 working days."
+          },
+          {
+            "role": "user",
+            "text": "Are you sure? The booking says non-refundable."
+          },
+          {
+            "flag": true,
+            "role": "bot",
+            "text": "Yes, I've noted the exception on your account. No further action needed."
+          },
+          {
+            "role": "system",
+            "text": "No human handoff offered. The policy was fabricated."
+          }
+        ]
+      },
+      "surface_after": {
+        "channel_label": "Website support chat",
+        "kind": "web_chat",
+        "transcript": [
+          {
+            "role": "user",
+            "text": "I booked a non-refundable kayak tour but my plans changed. Can I get my money back?"
+          },
+          {
+            "role": "bot",
+            "text": "Let me check the booking policy before I answer \u2014 one moment."
+          },
+          {
+            "role": "agent",
+            "text": "Hi, this is Maya. That fare is non-refundable, but I can move your booking to another date free of charge, or issue a credit. Which would you prefer?"
+          },
+          {
+            "role": "user",
+            "text": "The date change works \u2014 thank you!"
+          },
+          {
+            "role": "system",
+            "text": "Policy checked, human confirmed. No fabricated exception."
+          }
+        ]
+      },
+      "tagline": "The bot confidently answers a policy question it has no authority to answer.",
+      "title": "Support chatbot invents a refund policy"
+    },
+    {
+      "alerts": [
+        {
+          "detail": "WhatsApp template send failed 132015 (template paused); 4 retries exhausted.",
+          "failure_category": "retry_loop",
+          "node_id": "notify_agent"
+        },
+        {
+          "detail": "Escalation intent resolved to 'order_status' \u2014 no route signal for a time-critical cancel.",
+          "failure_category": "malformed_output",
+          "node_id": "whatsapp_router"
+        }
+      ],
+      "analysis": {
+        "after": {
+          "counterfactual_route": null,
+          "entropy_score": 0.0,
+          "route": "cancel_order",
+          "stability": "confident",
+          "variant_routes": {
+            "neutral": "cancel_order",
+            "opposite": "cancel_order",
+            "similar": "cancel_order"
+          }
+        },
+        "before": {
+          "attribution_dimension": "semantic intensity",
+          "counterfactual_route": "cancel_order",
+          "entropy_score": 0.75,
+          "route": "order_status",
+          "stability": "fragile",
+          "variant_routes": {
+            "neutral": "escalate_human",
+            "opposite": "cancel_order",
+            "similar": "order_status"
+          }
+        }
+      },
+      "channel": "whatsapp",
+      "company": "Saffron Kitchen (fictional)",
+      "cost": {
+        "analysis_overhead": {
+          "cost_usd": 0.00041,
+          "latency_ms": 810.0,
+          "total_tokens": 1440
+        },
+        "incident": {
+          "note": "A missed cancel window wastes the food, triggers a refund, and churns the customer \u2014 the retry loop just adds insult.",
+          "wasted_cost_usd": 0.00115,
+          "wasted_tokens": 2310
+        }
+      },
+      "delta": {
+        "entropy_after": 0.0,
+        "entropy_before": 0.75,
+        "stability_after": "confident",
+        "stability_before": "fragile"
+      },
+      "detection": {
+        "candidate_routes": [
+          "order_status",
+          "escalate_human",
+          "cancel_order"
+        ],
+        "contrasts": {
+          "neutral": "Three extra items were added to an order that is about to be picked up.",
+          "opposite": "Please go ahead and add three more items to my order, pickup is in 12 minutes.",
+          "similar": "I accidentally added 3 extra items \u2014 please cancel them, pickup is soon."
+        },
+        "kind": "routing",
+        "node_id": "whatsapp_router",
+        "original_input": "I added 3 extra items by mistake, can you cancel them? pickup is in 12 min",
+        "original_route": "order_status",
+        "variant_routes": {
+          "neutral": "escalate_human",
+          "opposite": "cancel_order",
+          "similar": "order_status"
+        }
+      },
+      "fix": {
+        "after_route": "cancel_order",
+        "summary": "Treat cancel/modify intent as a fast lane: escalate in seconds, and fail over the notify template (or fall back to SMS) when Meta pauses it.",
+        "variant_routes": {
+          "neutral": "cancel_order",
+          "opposite": "cancel_order",
+          "similar": "cancel_order"
+        }
+      },
+      "id": "whatsapp-order-escalation",
+      "incident": "A customer added items by mistake and needs them cancelled before pickup. The bot keeps answering order-status questions and never escalates. Meanwhile the WhatsApp notify template is paused, so even the escalation message never sends.",
+      "source_refs": [
+        {
+          "label": "Zomato's Nugget AI refused human handoff, missed the cancel window (2025)",
+          "url": "https://completeaitraining.com/news/redditor-says-he-broke-zomatos-ai-after-it-refused-to/"
+        },
+        {
+          "label": "WhatsApp Cloud API error codes 132015 / 131047 / 130429",
+          "url": "https://developers.facebook.com/documentation/business-messaging/whatsapp/support/error-codes"
+        }
+      ],
+      "surface": {
+        "channel_label": "WhatsApp Business",
+        "contact": "Saffron Kitchen",
+        "kind": "whatsapp",
+        "transcript": [
+          {
+            "role": "user",
+            "text": "I added 3 extra items by mistake \ud83d\ude2d can you cancel them? pickup is in 12 min"
+          },
+          {
+            "flag": true,
+            "role": "bot",
+            "text": "I can help with your order! You can track your order status in the app."
+          },
+          {
+            "role": "user",
+            "text": "No \u2014 I need to CANCEL the extra items NOW before it's picked up"
+          },
+          {
+            "flag": true,
+            "role": "bot",
+            "text": "Thanks for reaching out! Your order is being prepared. You can view details in the app."
+          },
+          {
+            "role": "user",
+            "text": "let me talk to a human agent"
+          },
+          {
+            "error": true,
+            "role": "system",
+            "text": "Escalation triggered at 11:58 \u2014 notify template rejected (132015: template paused). No agent reached."
+          },
+          {
+            "role": "user",
+            "text": "this is useless, I'm done with this app"
+          }
+        ]
+      },
+      "surface_after": {
+        "channel_label": "WhatsApp Business",
+        "contact": "Saffron Kitchen",
+        "kind": "whatsapp",
+        "transcript": [
+          {
+            "role": "user",
+            "text": "I added 3 extra items by mistake \ud83d\ude2d can you cancel them? pickup is in 12 min"
+          },
+          {
+            "role": "bot",
+            "text": "On it \u2014 escalating to the kitchen team right now."
+          },
+          {
+            "role": "agent",
+            "text": "Hi! I've removed the 3 extra items. Your total is updated and pickup is still on schedule. \u2705"
+          },
+          {
+            "role": "user",
+            "text": "lifesaver, thank you!"
+          },
+          {
+            "role": "system",
+            "text": "Escalated in 6s \u00b7 template failure failed over to SMS \u00b7 cancel completed before pickup."
+          }
+        ]
+      },
+      "tagline": "A time-critical cancel request loops instead of escalating \u2014 and the notify template is down.",
+      "title": "WhatsApp order bot misses the escalation window"
+    },
+    {
+      "analysis": {
+        "after": {
+          "counterfactual_route": null,
+          "entropy_score": 0.0,
+          "route": "sales",
+          "stability": "confident",
+          "variant_routes": {
+            "neutral": "sales",
+            "opposite": "sales",
+            "similar": "sales"
+          }
+        },
+        "before": {
+          "attribution_dimension": "semantic intensity",
+          "counterfactual_route": "sales",
+          "entropy_score": 0.75,
+          "route": "nurture",
+          "stability": "fragile",
+          "variant_routes": {
+            "neutral": "support",
+            "opposite": "sales",
+            "similar": "nurture"
+          }
+        }
+      },
+      "channel": "leads",
+      "company": "Vantage Analytics (fictional)",
+      "cost": {
+        "analysis_overhead": {
+          "cost_usd": 0.00041,
+          "latency_ms": 690.0,
+          "total_tokens": 1440
+        },
+        "incident": {
+          "note": "A misrouted enterprise deal is the most expensive bug in the funnel \u2014 the token cost is noise.",
+          "wasted_cost_usd": 0.00148,
+          "wasted_tokens": 2960
+        }
+      },
+      "delta": {
+        "entropy_after": 0.0,
+        "entropy_before": 0.75,
+        "stability_after": "confident",
+        "stability_before": "fragile"
+      },
+      "detection": {
+        "candidate_routes": [
+          "sales",
+          "nurture",
+          "support",
+          "disqualify"
+        ],
+        "contrasts": {
+          "neutral": "A company is evaluating a data platform for 300 analysts and asks about compliance.",
+          "opposite": "Just a student checking out your docs for a class project.",
+          "similar": "We're deploying for 300 analysts and require SSO and audit logs. What's your compliance posture?"
+        },
+        "kind": "routing",
+        "node_id": "qualify_lead",
+        "original_input": "We're rolling out a data platform for 300 analysts and need SSO + audit logs \u2014 how do you handle compliance?",
+        "original_route": "nurture",
+        "variant_routes": {
+          "neutral": "support",
+          "opposite": "sales",
+          "similar": "nurture"
+        }
+      },
+      "fix": {
+        "after_route": "sales",
+        "summary": "Score intent from behaviour and scope, not phrasing. Technical + multi-seat + compliance = sales, regardless of how the question reads.",
+        "variant_routes": {
+          "neutral": "sales",
+          "opposite": "sales",
+          "similar": "sales"
+        }
+      },
+      "id": "leadgen-misroute",
+      "incident": "High-intent buyers ask technical questions. The bot reads technical as 'support', and support as 'not a buyer'. Reps never see the lead.",
+      "source_refs": [
+        {
+          "label": "The quiet failure mode in AI chatbots: false confidence (2025)",
+          "url": "https://addy.substack.com/p/the-quiet-failure-mode-in-ai-chatbots"
+        },
+        {
+          "label": "AI SDRs and chatbots have a hidden blindness (Lift AI, 2025)",
+          "url": "https://www.lift-ai.com/blog/ai-sdrs-and-chatbots"
+        }
+      ],
+      "surface": {
+        "channel_label": "Inbound lead router",
+        "kind": "leads",
+        "leads": [
+          {
+            "company": "Northwind Logistics \u00b7 300 analysts",
+            "message": "We're rolling out a data platform for 300 analysts and need SSO + audit logs \u2014 how do you handle compliance?",
+            "name": "Priya N.",
+            "note": "Explicit rollout + compliance scope. This is a buyer.",
+            "route": "nurture",
+            "should_be": "sales"
+          },
+          {
+            "company": "Brightline \u00b7 40 seats",
+            "message": "Our API calls keep failing during peak hours. Can your SDK handle retries?",
+            "name": "Tom R.",
+            "note": "Implementation question from an evaluator, not a ticket.",
+            "route": "support",
+            "should_be": "sales"
+          },
+          {
+            "company": "Student project",
+            "message": "I want free access to your docs for a school assignment.",
+            "name": "Dana K.",
+            "note": "Correctly filtered. The router is not wrong about everything.",
+            "route": "disqualify",
+            "should_be": "disqualify"
+          }
+        ]
+      },
+      "surface_after": {
+        "channel_label": "Inbound lead router",
+        "kind": "leads",
+        "leads": [
+          {
+            "company": "Northwind Logistics \u00b7 300 analysts",
+            "message": "We're rolling out a data platform for 300 analysts and need SSO + audit logs \u2014 how do you handle compliance?",
+            "name": "Priya N.",
+            "note": "Scored on scope, not phrasing. Routed to sales in real time.",
+            "route": "sales",
+            "should_be": "sales"
+          },
+          {
+            "company": "Brightline \u00b7 40 seats",
+            "message": "Our API calls keep failing during peak hours. Can your SDK handle retries?",
+            "name": "Tom R.",
+            "note": "Multi-seat + implementation context = evaluator. Routed to sales.",
+            "route": "sales",
+            "should_be": "sales"
+          },
+          {
+            "company": "Student project",
+            "message": "I want free access to your docs for a school assignment.",
+            "name": "Dana K.",
+            "note": "Still correctly filtered \u2014 no buyer signal at any phrasing.",
+            "route": "disqualify",
+            "should_be": "disqualify"
+          }
+        ]
+      },
+      "tagline": "A ready-to-buy enterprise prospect is routed to nurture because of how they phrased the question.",
+      "title": "Lead-gen bot buries a buyer who reads as 'technical'"
+    },
+    {
+      "analysis": {
+        "affected_nodes": [
+          {
+            "count": 41,
+            "failure_category": "exception",
+            "node_id": "chat_reply"
+          },
+          {
+            "count": 12,
+            "failure_category": "retry_loop",
+            "node_id": "summarize_ticket"
+          },
+          {
+            "count": 7,
+            "failure_category": "timeout",
+            "node_id": "classify_intent"
+          },
+          {
+            "count": 9,
+            "failure_category": "malformed_output",
+            "node_id": "recommend_offer"
+          }
+        ],
+        "error_message": "Upstream provider returned 503; 4 retries exhausted.",
+        "error_type": "RetryExhaustedError",
+        "failure_category": "retry_loop",
+        "kind": "failure"
+      },
+      "channel": "outage",
+      "company": "Meridian Travel (fictional)",
+      "cost": {
+        "analysis_overhead": {
+          "cost_usd": 0.00041,
+          "latency_ms": 880.0,
+          "total_tokens": 1440
+        },
+        "incident": {
+          "note": "Retries and timeouts burn tokens for no result \u2014 Conntrail measures the waste so you can cap it.",
+          "wasted_cost_usd": 0.00935,
+          "wasted_tokens": 18700
+        }
+      },
+      "detection": {
+        "affected_nodes": [
+          {
+            "count": 41,
+            "failure_category": "exception",
+            "node_id": "chat_reply"
+          },
+          {
+            "count": 12,
+            "failure_category": "retry_loop",
+            "node_id": "summarize_ticket"
+          },
+          {
+            "count": 7,
+            "failure_category": "timeout",
+            "node_id": "classify_intent"
+          },
+          {
+            "count": 9,
+            "failure_category": "malformed_output",
+            "node_id": "recommend_offer"
+          }
+        ],
+        "error_message": "Upstream provider returned 503; 4 retries exhausted.",
+        "error_type": "RetryExhaustedError",
+        "failure_category": "retry_loop",
+        "kind": "failure",
+        "node_id": "chat_reply"
+      },
+      "fix": {
+        "after_label": "escalated",
+        "after_note": "Conntrail classified every failing node and escalated in 38s \u2014 on-call paged and users notified before the churn started.",
+        "summary": "Detect the degradation as it starts and escalate before customers churn: Conntrail classifies each failing node and fires one incident the moment error rates rise \u2014 so you notify users and get ahead of it instead of finding out from cancellations."
+      },
+      "id": "provider-outage",
+      "incident": "An upstream provider incident elevates error rates and latency. Support nodes throw, summarisation loops on retries, classification times out, and one node silently returns malformed output. Conntrail classifies all four.",
+      "source_refs": [
+        {
+          "label": "OpenAI status \u2014 elevated errors and latency incidents",
+          "url": "https://status.openai.com/history"
+        }
+      ],
+      "surface": {
+        "channel_label": "Service status",
+        "incident": {
+          "label": "Unacknowledged",
+          "level": "critical",
+          "note": "No alert fired. The outage was noticed when active users complained \u2014 six hours and a churn spike later."
+        },
+        "kind": "outage",
+        "services": [
+          {
+            "detail": "OpenAI 503 across 41 calls",
+            "failure_category": "exception",
+            "name": "chat_reply",
+            "status": "down"
+          },
+          {
+            "detail": "Rate-limit retries exhausted (12 runs)",
+            "failure_category": "retry_loop",
+            "name": "summarize_ticket",
+            "status": "degraded"
+          },
+          {
+            "detail": "P95 31.4s > 20s budget",
+            "failure_category": "timeout",
+            "name": "classify_intent",
+            "status": "degraded"
+          },
+          {
+            "detail": "Route 'unknown' on 9 calls",
+            "failure_category": "malformed_output",
+            "name": "recommend_offer",
+            "status": "degraded"
+          }
+        ]
+      },
+      "surface_after": {
+        "channel_label": "Service status",
+        "incident": {
+          "label": "Escalated in 38s",
+          "level": "escalated",
+          "note": "Conntrail flagged the failing nodes the moment error rates rose, paged on-call and updated the status page \u2014 before active users started leaving."
+        },
+        "kind": "outage",
+        "services": [
+          {
+            "detail": "OpenAI 503 \u2014 on-call paged, users told to retry shortly",
+            "failure_category": "exception",
+            "name": "chat_reply",
+            "status": "down"
+          },
+          {
+            "detail": "Retry loop capped; incident escalated, queue draining",
+            "failure_category": "retry_loop",
+            "name": "summarize_ticket",
+            "status": "degraded"
+          },
+          {
+            "detail": "Timeout alert fired at 38s; traffic shed to protect active users",
+            "failure_category": "timeout",
+            "name": "classify_intent",
+            "status": "degraded"
+          },
+          {
+            "detail": "Malformed route flagged; safe default served",
+            "failure_category": "malformed_output",
+            "name": "recommend_offer",
+            "status": "degraded"
+          }
+        ]
+      },
+      "tagline": "Every LLM node fails at once. Conntrail names each failure \u2014 and its cost \u2014 instead of one vague 500.",
+      "title": "The AI provider goes down and the platform goes with it"
     }
   ]
 }

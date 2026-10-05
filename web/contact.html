@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact — Conntrail</title>
+  <meta name="description" content="Request an extended Conntrail demo, managed-enterprise early access, or ask a question.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">Conntrail</a>
+    <nav>
+      <a href="use-cases.html">Use cases</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="contact">
+      <h1>Talk to us</h1>
+      <p class="subtitle">Extended demo, managed-enterprise early access, or a question. We reply by email.</p>
+      <form id="contact-form" class="contact-form" novalidate>
+        <div class="field-row">
+          <label>Name<input type="text" name="name" required autocomplete="name"></label>
+          <label>Email<input type="email" name="email" required autocomplete="email"></label>
+        </div>
+        <label>Company <span class="opt">(optional)</span><input type="text" name="company" autocomplete="organization"></label>
+        <label>What do you need?<textarea name="message" rows="6" required placeholder="A managed demo, early access, a question about the reports…"></textarea></label>
+        <label class="hp" aria-hidden="true">Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+        <button class="btn btn-primary" type="submit" id="contact-submit">Send</button>
+        <p class="form-status" id="form-status" role="status"></p>
+      </form>
+      <p class="contact-alt">
+        Prefer email? <a href="mailto:hello@ibzie.dev">hello@ibzie.dev</a>
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>Conntrail — evidence, not guesswork.</span>
+    <span class="exp-link"><strong>Experimental:</strong> traces feeding prompt optimization →
+      <a href="https://github.com/anomalyco/conntrail" rel="noopener">docs</a></span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

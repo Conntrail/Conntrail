@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Use cases — Conntrail</title>
+  <meta name="description" content="Four real-world AI failure patterns, each shown as an incident, Conntrail's detection of it, and the fix.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">Conntrail</a>
+    <nav>
+      <a href="use-cases.html">Use cases</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="use-cases">
+      <h1>What this looks like when it breaks</h1>
+      <p class="subtitle">
+        Four failure patterns from the wild. Pick one — the traces are precomputed,
+        so nothing here calls a model or costs anything to view. Use
+        <strong>Incident / After fix</strong> to see the user-facing outcome on both sides.
+      </p>
+
+      <div class="case-picker" id="case-picker" role="tablist"></div>
+
+      <article class="case" id="case-view" aria-live="polite"></article>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>Conntrail — evidence, not guesswork.</span>
+    <span class="exp-link"><strong>Experimental:</strong> traces feeding prompt optimization →
+      <a href="https://github.com/anomalyco/conntrail" rel="noopener">docs</a></span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
