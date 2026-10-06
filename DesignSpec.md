@@ -33,11 +33,29 @@ a **precision instrument**, not a SaaS landing page:
 - **Data looks measured**: all numbers, route names, timestamps and
   metadata use the monospace stack with tabular numerals; uppercase
   letterspaced micro-labels for panel headers ("WHAT THE USER SAW").
-- **The pitch is the instrument**: the homepage hero shows a real frozen
-  measurement (gauge 0.75, FRAGILE, flipped variants, counterfactual) next
-  to the headline. No stock illustration.
 - **Calm, EU-technical tone**: no gradients, no emoji decoration, no hype
   words, hairline borders, restrained shadows.
+
+Research basis (checked against 2025 devtool landing-page studies: Evil
+Martians' 100+ page analysis, Nakora's 374-page audit, Datadog/Sentry
+breakdowns):
+
+- **Centered hero composition** with the product visual below it, the
+  dominant devtools pattern. First words of the H1 carry the meaning
+  ("Why your agent decided..."), kicker names the category ("Observability
+  for AI agents").
+- **Dual CTA**: bold primary to the interactive demo ("See it on real
+  failures"), lighter secondary to the free self-hosted path. Never a
+  "book a demo" primary; developers try before they talk.
+- **Section banding**: `.band` alternates tinted full-bleed strips with the
+  white canvas for scroll rhythm (Datadog pattern: separation by tint and
+  hairline, not heavy shadows).
+- **Trust strip instead of logo wall**: we have no customers to cite, so
+  the honest equivalent is provenance: every demo trace is frozen from a
+  documented public incident pattern (Cursor, Air Canada, Priceline,
+  Zomato, OpenAI status).
+- **Closing CTA band** (`.cta-band`): a dark, full-width-feeling block as
+  the last conversion beat before the footer.
 
 ## 2. Hard constraints (do not violate, ever)
 
@@ -95,6 +113,7 @@ a hex outside the token blocks.**
 | `--fragile/-soft/-ink` | `#dc2626 / #fdebeb / #b91c1c` | `#f87171 / 12% / #fca5a5` | unstable |
 | `--wa-bg/out/in` | `#ece0d4 / #d2f8c6 / #ffffff` | `#0b141a / #005c4b / #1f2c34` | WhatsApp surface |
 | `--grid-line/dot` | low-alpha dark | low-alpha light | graph-paper |
+| `--band-bg/fg/muted/border` | `#0e1420 / #f4f7ff / #9aa8c2` | `#151b26 / #eef2fb / #94a0b6` | closing CTA band |
 
 Type: `--font-ui` (system stack), `--font-mono` (ui-monospace stack, always
 with `font-variant-numeric: tabular-nums`). Scale: `--t-xs` .75rem, `--t-sm`
@@ -146,15 +165,28 @@ schema.**
 - **Gauge**: SVG r=52, C≈326.73, `stroke-dashoffset = C×(1−entropy)`,
   animated via double-rAF in `app.js:gauge()`. Ticks at 0/.25/.5/.75,
   dashed threshold markers at .25/.60. Entropy 0 draws a `.gauge-zero-dot`
-  at 12 o'clock instead of an arc (an empty ring looked broken).
+  at 12 o'clock instead of an arc (an empty ring looked broken). The
+  homepage hero contains a hand-written static copy of the 0.75 fragile
+  gauge; keep its numbers in sync with use case 01 if fixtures change.
 - **Attribution table**: flipped rows get `.flip` (red tint + inset bar)
   and a `res-flip` chip; stable rows `res-hold`. "First flip:" line below.
 - **Fix toggle**: two buttons + sliding `::before` thumb (red left, green
   right); `.after` class on the container slides it. Delta chips
   (`.delta-chip delta-<stability>`) show `0.75 FRAGILE → 0.00 CONFIDENT`;
   the outage case shows `Unacknowledged → Escalated in 38s` (no label span).
-- **Case picker**: pill tabs, `role=tab`, roving `tabindex`, arrow/Home/End
-  keys in `app.js:onPickerKey`.
+- **Case picker**: uniform 4-up grid of equal tab cards (`.case-picker` is
+  `display:grid`, never flex-wrap; each button = `.tab-top` row with
+  `.idx` + `.kind` chip, then the title). `role=tab`, roving `tabindex`,
+  arrow/Home/End keys in `app.js:onPickerKey`. 2×2 below 900px.
+- **Case toolbar**: `.case-toolbar` sits directly under the case head and
+  ABOVE the two panels; it holds the Incident/After-fix toggle (left) and
+  the delta chips (right). The fix summary stays below the panels in `.fix`.
+- **Homepage structure** (index only): centered `.hero` → `.specimen`
+  console (3 columns: gauge+badge / variant routes / counterfactual) →
+  `.trust` provenance strip → `.band` with `.mini-steps` (Observe /
+  Perturb / Measure) → positioning → explore → `.cta-band`. The band is
+  full-bleed via the `box-shadow 100vmax` + `clip-path` trick; do not
+  replace it with negative margins (breaks with scrollbars).
 - **Surfaces**: web_chat uses per-message avatars (B / M); WhatsApp does
   NOT (authentic); leads use `route → should_be` chips + verdict label;
   outage uses status dots (pulsing on `down`) + `cat-<category>` chips.
@@ -170,27 +202,40 @@ All original class names were preserved (`.topbar`, `.hero`, `.pos-card`,
 `.brand-mark`, `.grid-bg`, `.page-head`, `.section-head`, `.hero-grid`,
 `.hero-stats`, `.specimen*`, `.chip`, `.res*`, `.icon`, `.msg-row`,
 `.avatar`, `.lead-verdict`, `.cat-<category>`, `.cf-label`, `.delta-*`,
-`.fix-top`, `.case-meta`, `.steps`, `.label-meter`, `.contact-grid`,
-`.footer-inner`, `.footer-col`, `.footer-fine`, `.h-label`, `.h-tag`.
+`.case-meta`, `.steps`, `.label-meter`, `.contact-grid`,
+`.footer-inner`, `.footer-col`, `.footer-fine`, `.h-label`, `.h-tag`,
+`.band`, `.mini-steps`, `.step-no`, `.trust`, `.cta-band`, `.btn-ghost`,
+`.case-toolbar`, `.tab-top`, `.kind`, `.specimen-score`,
+`.specimen-variants-head`. (`.fix-top` existed in iteration 1 and was
+removed; the toolbar replaced it.)
 Footer markup changed from two `<span>`s to `.footer-inner` grid —
 `.site-footer` and `.exp-link` still exist as hooks.
 
 ## 7. What changed (prioritized, done)
 
+Iteration 1:
 1. Full token system + 18-section stylesheet; graph-grid motif; type scale.
 2. Brand mark + favicon; topbar with blur, active-nav underline, skip link.
-3. Hero: two-column, headline pitch + static specimen measurement card +
-   mono proof stats.
-4. Use-case view: instrument-style panel headers with icons, premium
+3. Use-case view: instrument-style panel headers with icons, premium
    surfaces (chat avatars/flags, authentic WhatsApp, verdict-labelled
    leads, pulsing outage dots), tab a11y.
-5. Gauge ticks/thresholds/zero-dot; tinted badges; flipped-row treatment;
+4. Gauge ticks/thresholds/zero-dot; tinted badges; flipped-row treatment;
    counterfactual as a labelled callout; failure-signal chips.
-6. Incident/After-fix: sliding red/green segmented toggle + delta chips;
-   case re-render transition (reduced-motion safe).
-7. Footer: 3-column + mono fine print. Pricing/contact/pages restyled.
-8. All copy rewritten dash-free; fixtures de-dashed at the source
+5. Sliding red/green segmented toggle + delta chips; case re-render
+   transition (reduced-motion safe). Footer: 3-column + mono fine print.
+6. All copy rewritten dash-free; fixtures de-dashed at the source
    (`examples/website/use_cases.py`) and regenerated.
+
+Iteration 2 (after design-theory research; see §1):
+7. Hero rebuilt centered: category kicker, shorter H1, dual CTA
+   (demo primary, "Self-host it free" secondary), mono proof stats.
+8. Specimen readout became a full-width console under the hero CTAs;
+   trust strip (provenance) added; "Measured in three steps" band;
+   closing `.cta-band` before the footer.
+9. Case picker rebuilt as a uniform 4-up grid of equal cards (no more
+   ragged pills).
+10. Incident/After-fix toggle + delta chips moved into `.case-toolbar`
+    above the surfaces (was below the panels).
 
 ## 8. Remaining work (polish only, in priority order)
 

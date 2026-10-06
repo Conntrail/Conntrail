@@ -36,80 +36,106 @@
 
   <main id="main">
     <section class="hero grid-bg">
-      <div class="hero-grid">
-        <div>
-          <p class="eyebrow">Stability under semantic perturbation</p>
-          <h1>Conntrail tells you <em>why</em> your agent decided what it decided, and how close it was to deciding something else.</h1>
-          <p class="lede">
-            Tracing tools record what happened. Conntrail measures how brittle the
-            decision was: would a paraphrase, a tone shift, or an inversion of the
-            same input have sent the agent down a different route? And which
-            dimension flips it first?
-          </p>
-          <div class="hero-cta">
-            <a class="btn btn-primary" href="use-cases.html">See it on real failures
-              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-            </a>
-            <a class="btn" href="contact.html">Request a managed demo</a>
-          </div>
-          <div class="hero-stats">
-            <span><b>0.00 to 1.00</b> entropy score</span>
-            <span><b>3</b> contrast variants per decision</span>
-            <span>Findings recommend, never mutate</span>
-          </div>
-        </div>
+      <p class="eyebrow" style="justify-content: center;">Observability for AI agents</p>
+      <h1><em>Why</em> your agent decided, and how close it came to deciding otherwise.</h1>
+      <p class="lede">
+        Tracing tools record what happened. Conntrail measures how brittle the
+        decision was: would a paraphrase, a tone shift, or an inversion of the same
+        input have sent the agent down a different route? You get an entropy score,
+        the dimension that flipped it first, and the counterfactual route.
+      </p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="use-cases.html">See it on real failures
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="btn" href="pricing.html">Self-host it free</a>
+      </div>
+      <div class="hero-stats">
+        <span><b>0.00 to 1.00</b> entropy score</span>
+        <span><b>3</b> contrast variants per decision</span>
+        <span>Findings recommend, never mutate</span>
+      </div>
 
-        <div class="specimen" role="img" aria-label="Example measurement: the support_reply node scored 0.75 entropy, labelled fragile. The neutral and opposite variants flipped the route; removing the driving dimension takes the decline path.">
-          <div class="specimen-head">
-            <span>Specimen · precomputed trace</span>
-            <span class="chip">support_reply</span>
-          </div>
-          <div class="specimen-body">
-            <div class="specimen-row">
-              <div class="gauge-wrap">
-                <svg class="gauge" viewBox="0 0 120 120" aria-hidden="true">
-                  <circle class="gauge-track" cx="60" cy="60" r="52"/>
-                  <line class="gauge-tick" x1="114.5" y1="60" x2="119.5" y2="60"/>
-                  <line class="gauge-tick" x1="60" y1="114.5" x2="60" y2="119.5"/>
-                  <line class="gauge-tick" x1="5.5" y1="60" x2="0.5" y2="60"/>
-                  <line class="gauge-tick" x1="60" y1="5.5" x2="60" y2="0.5"/>
-                  <line class="gauge-threshold" x1="60" y1="104" x2="60" y2="110"/>
-                  <line class="gauge-threshold" x1="22.3" y1="32.4" x2="17.5" y2="28.8"/>
-                  <circle class="gauge-value" cx="60" cy="60" r="52" style="stroke: var(--fragile); stroke-dashoffset: 81.7"/>
-                </svg>
-                <div class="gauge-center">
-                  <span class="gauge-score">0.75</span>
-                  <span class="gauge-label">entropy</span>
-                </div>
-              </div>
-              <div class="verdict">
-                <span class="badge badge-fragile">fragile</span>
-                <p class="counterfactual">
-                  <span class="cf-label">Counterfactual</span>
-                  Remove the driving dimension and the agent takes the other path: <code>decline</code>.
-                </p>
+      <div class="specimen" role="img" aria-label="Example measurement: the support_reply node scored 0.75 entropy, labelled fragile. The neutral and opposite variants flipped the route; removing the driving dimension takes the decline path.">
+        <div class="specimen-head">
+          <span>Specimen · precomputed trace</span>
+          <span class="chip">support_reply</span>
+        </div>
+        <div class="specimen-body">
+          <div class="specimen-score">
+            <div class="gauge-wrap">
+              <svg class="gauge" viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="gauge-track" cx="60" cy="60" r="52"/>
+                <line class="gauge-tick" x1="114.5" y1="60" x2="119.5" y2="60"/>
+                <line class="gauge-tick" x1="60" y1="114.5" x2="60" y2="119.5"/>
+                <line class="gauge-tick" x1="5.5" y1="60" x2="0.5" y2="60"/>
+                <line class="gauge-tick" x1="60" y1="5.5" x2="60" y2="0.5"/>
+                <line class="gauge-threshold" x1="60" y1="104" x2="60" y2="110"/>
+                <line class="gauge-threshold" x1="22.3" y1="32.4" x2="17.5" y2="28.8"/>
+                <circle class="gauge-value" cx="60" cy="60" r="52" style="stroke: var(--fragile); stroke-dashoffset: 81.7"/>
+              </svg>
+              <div class="gauge-center">
+                <span class="gauge-score">0.75</span>
+                <span class="gauge-label">entropy</span>
               </div>
             </div>
-            <div class="specimen-variants">
-              <div class="specimen-variant">
-                <span class="v-name">similar</span>
-                <span class="chip">policy_answer</span>
-                <span class="res res-hold">holds</span>
-              </div>
-              <div class="specimen-variant">
-                <span class="v-name">neutral</span>
-                <span class="chip">escalate</span>
-                <span class="res res-flip">flipped</span>
-              </div>
-              <div class="specimen-variant">
-                <span class="v-name">opposite</span>
-                <span class="chip">decline</span>
-                <span class="res res-flip">flipped</span>
-              </div>
+            <span class="badge badge-fragile">fragile</span>
+          </div>
+          <div class="specimen-variants">
+            <div class="specimen-variants-head">Variant routes</div>
+            <div class="specimen-variant">
+              <span class="v-name">similar</span>
+              <span class="chip">policy_answer</span>
+              <span class="res res-hold">holds</span>
+            </div>
+            <div class="specimen-variant">
+              <span class="v-name">neutral</span>
+              <span class="chip">escalate</span>
+              <span class="res res-flip">flipped</span>
+            </div>
+            <div class="specimen-variant">
+              <span class="v-name">opposite</span>
+              <span class="chip">decline</span>
+              <span class="res res-flip">flipped</span>
             </div>
           </div>
+          <p class="counterfactual specimen-cf">
+            <span class="cf-label">Counterfactual</span>
+            Remove the driving dimension and the agent takes the other path: <code>decline</code>.
+            First flip: <strong>semantic intensity</strong>.
+          </p>
         </div>
       </div>
+
+      <p class="trust">Every demo trace is frozen from a documented public incident pattern · <b>Cursor · Air Canada · Priceline · Zomato · OpenAI status</b></p>
+    </section>
+
+    <section class="band">
+      <div class="section-head">
+        <p class="eyebrow">The method</p>
+        <h2>Measured in three steps</h2>
+        <p>No black box scoring. Every figure is derived from a signal Conntrail captured.</p>
+      </div>
+      <div class="mini-steps">
+        <div class="mini-step">
+          <span class="step-no">01</span>
+          <h3>Observe</h3>
+          <p>Your node runs unchanged. Conntrail captures the routing decision, its cost and its latency. It never rewrites output.</p>
+        </div>
+        <div class="mini-step">
+          <span class="step-no">02</span>
+          <h3>Perturb</h3>
+          <p>A cheap model, never your agent's model, writes three variants of the input: similar, neutral, opposite. The node re-runs on all four.</p>
+        </div>
+        <div class="mini-step">
+          <span class="step-no">03</span>
+          <h3>Measure</h3>
+          <p>Shannon entropy over the four outcomes, the first dimension that flips the route, and the counterfactual path it would have taken.</p>
+        </div>
+      </div>
+      <p class="pos-link"><a href="how-it-works.html">Read the full method
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a></p>
     </section>
 
     <section class="positioning-section">
@@ -171,6 +197,22 @@
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </span>
         </a>
+      </div>
+    </section>
+
+    <section>
+      <div class="cta-band">
+        <h2>Self-hosted is free. Measure your first decision today.</h2>
+        <p>
+          Run the SDK, collector and dashboard on your own infrastructure. No data
+          leaves your systems. Managed enterprise with SSO and EU residency is in progress.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="https://github.com/anomalyco/conntrail" rel="noopener">Start with the open source repo
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a class="btn btn-ghost" href="contact.html">Join the early access list</a>
+        </div>
       </div>
     </section>
   </main>

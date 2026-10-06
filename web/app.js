@@ -66,7 +66,10 @@
       btn.id = "case-tab-" + i;
       btn.setAttribute("aria-selected", i === state.index ? "true" : "false");
       btn.setAttribute("tabindex", i === state.index ? "0" : "-1");
-      btn.appendChild(el("span", "idx", "0" + (i + 1)));
+      var top = el("span", "tab-top");
+      top.appendChild(el("span", "idx", "0" + (i + 1)));
+      top.appendChild(el("span", "kind", c.detection.kind === "routing" ? "routing" : "failure"));
+      btn.appendChild(top);
       btn.appendChild(el("span", null, c.title));
       btn.addEventListener("click", function () { selectCase(i); });
       btn.addEventListener("keydown", function (e) { onPickerKey(e, i); });
@@ -478,10 +481,7 @@
     return chip;
   }
 
-  function renderFix(c) {
-    var wrap = el("div", "fix");
-    var top = el("div", "fix-top");
-
+  function fixToggle() {
     var toggle = el("div", "fix-toggle" + (state.phase === "after" ? " after" : ""));
     toggle.setAttribute("role", "group");
     toggle.setAttribute("aria-label", "Incident or after fix");
@@ -493,23 +493,27 @@
     beforeBtn.addEventListener("click", function () { state.phase = "before"; renderCase(); });
     afterBtn.addEventListener("click", function () { state.phase = "after"; renderCase(); });
     toggle.appendChild(beforeBtn); toggle.appendChild(afterBtn);
-    top.appendChild(toggle);
+    return toggle;
+  }
 
+  function fixDelta(c) {
+    var delta = null;
     if (c.delta) {
-      var delta = el("div", "fix-delta");
+      delta = el("div", "fix-delta");
       delta.appendChild(deltaChip(c.delta.entropy_before.toFixed(2), c.delta.stability_before, c.delta.stability_before));
       delta.appendChild(icon("arrow"));
       delta.appendChild(deltaChip(c.delta.entropy_after.toFixed(2), c.delta.stability_after, c.delta.stability_after));
-      top.appendChild(delta);
     } else if (c.surface.incident && c.surface_after && c.surface_after.incident) {
-      var ack = el("div", "fix-delta");
-      ack.appendChild(deltaChip(c.surface.incident.label, null, "fragile"));
-      ack.appendChild(icon("arrow"));
-      ack.appendChild(deltaChip(c.surface_after.incident.label, null, "boundary"));
-      top.appendChild(ack);
+      delta = el("div", "fix-delta");
+      delta.appendChild(deltaChip(c.surface.incident.label, null, "fragile"));
+      delta.appendChild(icon("arrow"));
+      delta.appendChild(deltaChip(c.surface_after.incident.label, null, "boundary"));
     }
-    wrap.appendChild(top);
+    return delta;
+  }
 
+  function renderFix(c) {
+    var wrap = el("div", "fix");
     wrap.appendChild(el("p", "fix-summary", c.fix.summary));
     return wrap;
   }
@@ -551,6 +555,13 @@
     head.appendChild(el("p", "case-tagline", c.tagline));
     head.appendChild(el("p", "case-incident", c.incident));
     view.appendChild(head);
+
+    // controls sit above the surfaces so the transformation is one tap away
+    var toolbar = el("div", "case-toolbar");
+    toolbar.appendChild(fixToggle());
+    var delta = fixDelta(c);
+    if (delta) toolbar.appendChild(delta);
+    view.appendChild(toolbar);
 
     var grid = el("div", "case-grid");
 
