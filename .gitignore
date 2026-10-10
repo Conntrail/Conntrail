@@ -224,5 +224,5 @@ __marimo__/
 Epics.md
 
 # Cloudflare Pages local dev (wrangler)
-web/node_modules/
-web/.wrangler/
+demo/site/node_modules/
+demo/site/.wrangler/

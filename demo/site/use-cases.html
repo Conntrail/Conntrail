@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Contact · Conntrail</title>
-  <meta name="description" content="Request an extended Conntrail demo, managed enterprise early access, or ask a question.">
+  <title>Use cases · Conntrail</title>
+  <meta name="description" content="Four real-world AI failure patterns, each shown as an incident, Conntrail's detection of it, and the fix.">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -28,6 +28,7 @@
     </a>
     <nav aria-label="Main">
       <a href="use-cases.html">Use cases</a>
+      <a href="live.html">Live demo</a>
       <a href="how-it-works.html">How it works</a>
       <a href="pricing.html">Pricing</a>
       <a href="contact.html">Contact</a>
@@ -35,34 +36,25 @@
   </header>
 
   <main id="main">
-    <section class="contact">
+    <section class="use-cases">
       <div class="page-head grid-bg">
-        <p class="eyebrow">Contact</p>
-        <h1>Talk to us</h1>
-        <p class="subtitle">Extended demo, managed enterprise early access, or a question. We reply by email.</p>
+        <p class="eyebrow">The evidence</p>
+        <h1>What this looks like when it breaks</h1>
+        <p class="subtitle">
+          Four failure patterns from the wild. Pick one; the traces are precomputed,
+          so nothing here calls a model or costs anything to view. Then flip
+          <strong>Incident / After fix</strong> to see the same moment once the routing is repaired.
+        </p>
       </div>
 
-      <div class="contact-grid">
-        <form id="contact-form" class="contact-form" novalidate>
-          <div class="field-row">
-            <label>Name<input type="text" name="name" required autocomplete="name"></label>
-            <label>Email<input type="email" name="email" required autocomplete="email"></label>
-          </div>
-          <label><span>Company <span class="opt">(optional)</span></span><input type="text" name="company" autocomplete="organization"></label>
-          <label>What do you need?<textarea name="message" rows="6" required placeholder="A managed demo, early access, a question about the reports..."></textarea></label>
-          <label class="hp" aria-hidden="true">Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
-          <button class="btn btn-primary" type="submit" id="contact-submit">Send message
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </button>
-          <p class="form-status" id="form-status" role="status"></p>
-        </form>
+      <div class="case-picker" id="case-picker" role="tablist" aria-label="Use cases"></div>
 
-        <aside class="contact-alt">
-          <h2>Prefer email?</h2>
-          <p>Write to <a href="mailto:hello@ibzie.dev">hello@ibzie.dev</a> and we will come back to you.</p>
-          <p>For managed enterprise, mention your expected trace volume and preferred region; that speeds up the scoping call.</p>
-        </aside>
-      </div>
+      <article class="case" id="case-view" aria-live="polite"></article>
+
+      <noscript>
+        <p class="subtitle">The interactive case viewer needs JavaScript. The method, stability
+        labels and pricing pages read fine without it.</p>
+      </noscript>
     </section>
   </main>
 

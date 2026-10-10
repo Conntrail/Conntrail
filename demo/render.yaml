@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: conntrail-demo
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -e ".[server,openai,groq]"
+    startCommand: uvicorn demo.service.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.6"
+      - key: ALLOWED_ORIGINS
+        value: "https://conntrail.ibzie.dev,http://localhost:8090,http://127.0.0.1:8090"
+      - key: DEMO_PER_IP_LIMIT
+        value: "3"
+      - key: DEMO_DAILY_CAP
+        value: "200"
+      - key: DEMO_PROVIDER
+        value: "openrouter"
+      - key: DEMO_MODEL_OPENROUTER
+        value: "cohere/north-mini-code:free"
+      # Free-tier trial key (set one in the Render dashboard; not committed).
+      - key: GROQ_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      # Optional Cloudflare Turnstile bot check.
+      - key: TURNSTILE_SECRET
+        sync: false
+      - key: TURNSTILE_SITE_KEY
+        sync: false

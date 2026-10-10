@@ -705,4 +705,14 @@
   markActiveNav();
   initDemo();
   initContact();
+
+  // Shared render helpers for the live demo page (live.js).
+  window.ConntrailUI = {
+    el: el,
+    gauge: gauge,
+    variantTable: variantTable,
+    costLine: costLine,
+    fmtUsd: fmtUsd,
+    fmtTokens: fmtTokens
+  };
 })();

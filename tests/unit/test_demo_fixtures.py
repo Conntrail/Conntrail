@@ -1,5 +1,5 @@
 """
-Tests for the static website demo fixtures (web/data/demo.json).
+Tests for the static website demo fixtures (demo/site/data/demo.json).
 
 Validates that the committed bundle is internally consistent and renderable:
 routing cases' entropy/stability must match the SDK's own formulas, failure
@@ -18,7 +18,7 @@ from conntrail.record import TraceRecord
 from conntrail.utils.entropy import routing_entropy
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_BUNDLE = _REPO_ROOT / "web" / "data" / "demo.json"
+_BUNDLE = _REPO_ROOT / "demo" / "site" / "data" / "demo.json"
 
 _VALID_CATEGORIES = {"exception", "retry_loop", "timeout", "malformed_output", "none"}
 _ANALYSER = DivergenceAnalyser()

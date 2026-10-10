@@ -6,8 +6,8 @@ contact form succeeds locally (it just prints the submission). Use this for a
 zero-dependency preview; use `npx wrangler pages dev .` to exercise the real
 Cloudflare Pages Function.
 
-    python web/dev_server.py            # http://localhost:8090
-    python web/dev_server.py --port 9000
+    python demo/site/dev_server.py            # http://localhost:8090
+    python demo/site/dev_server.py --port 9000
 """
 from __future__ import annotations
 

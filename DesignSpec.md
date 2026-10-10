@@ -1,6 +1,6 @@
 # Conntrail website — Design Spec & Handoff
 
-This document describes the redesign of the Conntrail marketing site (`web/`),
+This document describes the redesign of the Conntrail marketing site (`demo/site/`),
 what has already been implemented, and exactly what remains. Read it fully
 before touching anything. If a choice seems arbitrary, it is documented here.
 
@@ -10,7 +10,7 @@ before touching anything. If a choice seems arbitrary, it is documented here.
 the JS renderer, the fixtures and the favicon are done. As of the last commit
 of this doc:
 
-- `node --check web/app.js` passes
+- `node --check demo/site/app.js` passes
 - `522 passed` in `pytest tests/unit -m "not integration"`
 - `ruff check .` is clean
 - Screenshots reviewed: all 5 pages light + index/use-cases dark, all 4 use
@@ -64,7 +64,7 @@ breakdowns):
 2. **No external requests at runtime.** No Google Fonts, no CDNs, no
    analytics. System font stack only. The only outbound links are `<a href>`
    to GitHub and source references.
-3. Must satisfy `web/_headers` CSP:
+3. Must satisfy `demo/site/_headers` CSP:
    `default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';
    img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'`.
    Consequences: inline `style=""` attributes are allowed; inline `<script>`
@@ -77,7 +77,7 @@ breakdowns):
    `prefers-color-scheme` only (no manual toggle; do not add one casually).
 6. **Copy rule: NO dashes in content.** No em dash (—), no en dash (–), no
    spaced hyphen used as a pause. Verify with:
-   `grep -rn $'—\|–' web/*.html web/app.js web/data/demo.json` → must print
+   `grep -rn $'—\|–' demo/site/*.html demo/site/app.js demo/site/data/demo.json` → must print
    nothing. Hyphens inside compound words (self-hosted, retry_loop,
    pay-as-you-go) are words, not dashes; keep them but don't invent new ones.
    The "·" middot and "→" arrow are allowed and used deliberately.
@@ -90,7 +90,7 @@ breakdowns):
    - Self-hosted = "Available now"; managed enterprise = "In progress".
    - Findings recommend, never mutate. The site recommends nothing itself.
 
-## 3. Design tokens (all in `web/style.css`, section "1. Tokens")
+## 3. Design tokens (all in `demo/site/style.css`, section "1. Tokens")
 
 Colors are CSS custom properties with light + dark values. **Never hardcode
 a hex outside the token blocks.**
@@ -126,23 +126,23 @@ Spacing: `--s1..--s8` = .25/.5/.75/1/1.5/2/3/4.5rem. Radii: `--r-sm` 6,
 
 ## 4. Architecture (what lives where)
 
-- `web/style.css` — the only stylesheet. 18 numbered sections; keep new CSS
+- `demo/site/style.css` — the only stylesheet. 18 numbered sections; keep new CSS
   in the right section. Dark values only inside the existing
   `@media (prefers-color-scheme: dark)` token block. All decorative
   animation inside `@media (prefers-reduced-motion: no-preference)`; a
   `reduce` block kills transitions globally.
-- `web/app.js` — the only script. Renders use cases from
+- `demo/site/app.js` — the only script. Renders use cases from
   `fetch("data/demo.json")`, plus the contact form POST to `/api/contact`
   and the active-nav marker. ES5-style (`var`, no modules) by choice.
-- `web/data/demo.json` — generated fixture bundle. **Never hand-edit.** It
-  is built by `examples/website/build_fixtures.py` from
-  `examples/website/use_cases.py` (entropy/attribution derived by the SDK).
+- `demo/site/data/demo.json` — generated fixture bundle. **Never hand-edit.** It
+  is built by `demo/fixtures/build_fixtures.py` from
+  `demo/fixtures/use_cases.py` (entropy/attribution derived by the SDK).
   After editing copy in `use_cases.py`, regenerate:
-  `.venv/bin/python examples/website/build_fixtures.py --out web/data/demo.json`
-- `web/favicon.svg` — brand mark: one node (blue) splitting into three
+  `.venv/bin/python demo/fixtures/build_fixtures.py --out demo/site/data/demo.json`
+- `demo/site/favicon.svg` — brand mark: one node (blue) splitting into three
   routes (green/amber/red). Same geometry as `.brand-mark` in the topbar.
-- `web/functions/api/contact.js`, `web/_headers`, `web/robots.txt`,
-  `web/wrangler.toml`, `web/dev_server.py` — untouched infrastructure.
+- `demo/site/functions/api/contact.js`, `demo/site/_headers`, `demo/site/robots.txt`,
+  `demo/site/wrangler.toml`, `demo/site/dev_server.py` — untouched infrastructure.
   Do not modify without a separate reason.
 
 ### IDs/classes `app.js` and tests depend on (breaking these breaks things)
@@ -224,7 +224,7 @@ Iteration 1:
 5. Sliding red/green segmented toggle + delta chips; case re-render
    transition (reduced-motion safe). Footer: 3-column + mono fine print.
 6. All copy rewritten dash-free; fixtures de-dashed at the source
-   (`examples/website/use_cases.py`) and regenerated.
+   (`demo/fixtures/use_cases.py`) and regenerated.
 
 Iteration 2 (after design-theory research; see §1):
 7. Hero rebuilt centered: category kicker, shorter H1, dual CTA
@@ -250,23 +250,23 @@ Iteration 2 (after design-theory research; see §1):
 4. **Deploy note**: nothing in the redesign changes deploy config;
    `wrangler.toml`, `_headers`, `functions/` are untouched. Deploy as before
    (`npx wrangler pages deploy web --project-name conntrail`).
-5. `AGENTS.md` does not mention `web/`; no update needed there.
-   `web/README.md` was already updated (favicon + stylesheet description).
+5. `AGENTS.md` does not mention `demo/site/`; no update needed there.
+   `demo/site/README.md` was already updated (favicon + stylesheet description).
 
 ## 9. Verification harness (exact commands)
 
 ```bash
 # serve (already running at the time of writing; restart with:)
-python web/dev_server.py            # http://localhost:8090
+python demo/site/dev_server.py            # http://localhost:8090
 
 # static checks
-node --check web/app.js
-.venv/bin/python -c "import json; json.load(open('web/data/demo.json'))"
+node --check demo/site/app.js
+.venv/bin/python -c "import json; json.load(open('demo/site/data/demo.json'))"
 .venv/bin/python -m pytest tests/unit -m "not integration" -q
 .venv/bin/ruff check .
 
 # dash check (must print nothing)
-grep -rn $'—\|–' web/*.html web/app.js web/data/demo.json examples/website/*.py
+grep -rn $'—\|–' demo/site/*.html demo/site/app.js demo/site/data/demo.json demo/fixtures/*.py
 
 # screenshots: cached Chromium + CDP script (no install needed;
 # python pkg 'websockets' from the repo venv; also emulates dark mode,

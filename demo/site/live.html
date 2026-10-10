@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live demo — Conntrail</title>
+  <meta name="description" content="Run Conntrail's real contrastive analysis on your own support message. Live, free, no signup.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">Conntrail</a>
+    <nav>
+      <a href="use-cases.html">Use cases</a>
+      <a href="live.html">Live demo</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="live">
+      <h1>Run it live</h1>
+      <p class="subtitle">
+        Type a customer-support message. Conntrail generates three perturbed variants,
+        re-runs the routing decision on all four, and measures how stable the route is.
+        This runs the real SDK against free models.
+      </p>
+
+      <form id="live-form" class="live-form" novalidate>
+        <label for="live-message">Support message</label>
+        <textarea id="live-message" name="message" rows="3" maxlength="600"
+          placeholder="e.g. This is the third time I've asked. I want my money back now, or I'm calling my lawyer."></textarea>
+
+        <div class="live-examples" id="live-examples">
+          <span class="live-examples-label">Try:</span>
+        </div>
+
+        <details class="live-byok">
+          <summary>Bring your own free key (optional)</summary>
+          <p class="subtitle">
+            The free demo is capped. To run unlimited, paste a free OpenRouter
+            (<code>sk-or-…</code>) or Groq (<code>gsk_…</code>) key. It is sent only to the
+            provider for this request and never stored.
+          </p>
+          <div class="field-row">
+            <label>Provider
+              <select id="live-provider" name="provider">
+                <option value="">auto-detect</option>
+                <option value="openrouter">OpenRouter</option>
+                <option value="groq">Groq</option>
+              </select>
+            </label>
+            <label>API key
+              <input id="live-key" name="api_key" type="password" autocomplete="off" placeholder="sk-or-… or gsk_…">
+            </label>
+          </div>
+        </details>
+
+        <div id="live-turnstile"></div>
+
+        <div class="live-actions">
+          <button class="btn btn-primary" type="submit" id="live-submit">Analyse</button>
+          <span class="live-status" id="live-status" role="status"></span>
+        </div>
+      </form>
+
+      <div class="live-meta" id="live-meta"></div>
+
+      <article class="case" id="live-result" hidden aria-live="polite"></article>
+
+      <p class="disclaimer">
+        Free models may use your input for training. Do not paste anything sensitive.
+        Conntrail shows measurements; it recommends nothing.
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>Conntrail — evidence, not guesswork.</span>
+    <span class="exp-link"><strong>Experimental:</strong> traces feeding prompt optimization →
+      <a href="https://github.com/anomalyco/conntrail" rel="noopener">docs</a></span>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <script src="live.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+# Conntrail live demo service.
+# Installs the SDK with the server extra (FastAPI/uvicorn) and the free-tier
+# provider clients. `-e .` resolves to the repo root when installed from there.
+-e .[server,openai,groq]

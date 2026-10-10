@@ -1424,3 +1424,31 @@ section { margin-bottom: var(--s8); }
   .specimen-variant { grid-template-columns: 3.8rem 1fr auto; }
   .bubble { max-width: 92%; }
 }
+
+/* --------------------------------------------------------------------------
+   19. Live demo
+   -------------------------------------------------------------------------- */
+.live-form { display: flex; flex-direction: column; gap: var(--s3); max-width: 720px; margin-top: var(--s4); }
+.live-form label { display: flex; flex-direction: column; gap: var(--s1); font-size: var(--t-sm); color: var(--muted); }
+.live-form textarea, .live-form input, .live-form select {
+  padding: var(--s2) var(--s3); border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--bg); color: var(--fg); font: inherit;
+}
+.live-form textarea:focus, .live-form input:focus, .live-form select:focus {
+  outline: 2px solid var(--ring); outline-offset: 0; border-color: var(--accent);
+}
+.live-examples { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+.live-examples-label { color: var(--muted); font-size: var(--t-sm); }
+.chip {
+  padding: var(--s1) var(--s3); border: 1px solid var(--border); border-radius: var(--r-pill);
+  background: var(--bg); color: var(--fg); cursor: pointer; font-size: var(--t-xs);
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.live-byok { border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--s3) var(--s4); background: var(--panel); }
+.live-byok summary { cursor: pointer; font-size: var(--t-sm); }
+.live-byok .field-row { margin-top: var(--s3); }
+.live-actions { display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; }
+.live-status { font-size: var(--t-sm); color: var(--muted); font-family: var(--font-mono); }
+.live-status.err { color: var(--fragile); }
+.live-meta { color: var(--muted); font-size: var(--t-sm); font-family: var(--font-mono); margin-top: var(--s3); }
+#live-result { margin-top: var(--s5); }

@@ -4,13 +4,13 @@ Build the static website demo's frozen bundle from the use cases.
 Default (offline): derive entropy/stability/attribution/counterfactual from the
 hand-authored route labels using the SDK's own ``routing_entropy`` and the
 analyser's fixed attribution table. Deterministic, no LLM, no cost. This is
-what the committed ``web/data/demo.json`` is built from.
+what the committed ``demo/site/data/demo.json`` is built from.
 
 ``--live`` is not supported for use cases (they are hand-authored incidents);
 use the generic fixture harness for live capture.
 
 Usage:
-    python examples/website/build_fixtures.py --out web/data/demo.json
+    python demo/fixtures/build_fixtures.py --out demo/site/data/demo.json
 """
 from __future__ import annotations
 
@@ -177,7 +177,7 @@ def build() -> list[TraceRecord]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build the website demo fixture bundle")
-    parser.add_argument("--out", type=Path, default=Path("web/data/demo.json"))
+    parser.add_argument("--out", type=Path, default=Path("demo/site/data/demo.json"))
     args = parser.parse_args()
 
     use_cases = build_use_cases()

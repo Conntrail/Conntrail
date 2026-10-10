@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-05T23:31:12.176890+00:00",
+  "generated_at": "2026-10-10T04:25:25.500385+00:00",
   "mode": "offline",
   "records": [
     {
@@ -35,9 +35,9 @@
       },
       "stability": "fragile",
       "status": "ok",
-      "timestamp": "2026-10-05T23:31:12.176839+00:00",
+      "timestamp": "2026-10-10T04:25:25.500336+00:00",
       "token_usage": null,
-      "trace_id": "cf75b111-c25f-473f-a001-f090978ff59e"
+      "trace_id": "1e16310a-5a3b-4a3f-a21f-559d87893d59"
     },
     {
       "analysis_overhead": {
@@ -72,9 +72,9 @@
       },
       "stability": "fragile",
       "status": "ok",
-      "timestamp": "2026-10-05T23:31:12.176858+00:00",
+      "timestamp": "2026-10-10T04:25:25.500355+00:00",
       "token_usage": null,
-      "trace_id": "d5e6ec0f-6535-4a10-82c5-4a7b95b56a56"
+      "trace_id": "8fd51c11-cf18-4297-8ea9-f9416ccef19e"
     },
     {
       "analysis_overhead": {
@@ -109,9 +109,9 @@
       },
       "stability": "fragile",
       "status": "ok",
-      "timestamp": "2026-10-05T23:31:12.176867+00:00",
+      "timestamp": "2026-10-10T04:25:25.500364+00:00",
       "token_usage": null,
-      "trace_id": "38673aef-2b5e-4889-be9b-21472f9bb12e"
+      "trace_id": "d73edc07-99d6-49bd-a4ee-2d7ae4886918"
     }
   ],
   "use_cases": [
