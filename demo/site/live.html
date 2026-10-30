@@ -21,58 +21,68 @@
   </header>
 
   <main>
-    <section class="live">
-      <h1>Run it live</h1>
-      <p class="subtitle">
-        Type a customer-support message. Conntrail generates three perturbed variants,
-        re-runs the routing decision on all four, and measures how stable the route is.
-        This runs the real SDK against free models.
-      </p>
+    <section class="live interactive-demo">
+      <div class="page-head grid-bg">
+        <p class="eyebrow">Live analysis</p>
+        <h1>Run a real routing measurement.</h1>
+        <p class="subtitle">
+          Type a customer-support message. Conntrail generates three perturbations,
+          re-runs the router on all four inputs, and measures how stable the route is.
+          This is the real SDK against free models, not a replay.
+        </p>
+      </div>
 
-      <form id="live-form" class="live-form" novalidate>
-        <label for="live-message">Support message</label>
-        <textarea id="live-message" name="message" rows="3" maxlength="600"
-          placeholder="e.g. This is the third time I've asked. I want my money back now, or I'm calling my lawyer."></textarea>
+      <div class="demo-shell">
+        <div class="demo-input-pane">
+          <div class="demo-pane-head"><span>01 · Input</span><span class="demo-live-tag">Live · free models</span></div>
+          <form id="live-form" class="live-form" novalidate>
+            <label for="live-message">Customer-support message</label>
+            <textarea id="live-message" name="message" rows="4" maxlength="600"
+              placeholder="e.g. This is the third time I've asked. I want my money back now, or I'm calling my lawyer."></textarea>
 
-        <div class="live-examples" id="live-examples">
-          <span class="live-examples-label">Try:</span>
+            <div class="live-examples" id="live-examples">
+              <span class="live-examples-label">Try an example:</span>
+            </div>
+
+            <details class="live-byok">
+              <summary>Bring your own free key (optional)</summary>
+              <p class="subtitle">
+                The free demo is capped. To run unlimited, paste a free OpenRouter
+                (<code>sk-or-…</code>) or Groq (<code>gsk_…</code>) key. It is sent only to the
+                provider for this request and never stored.
+              </p>
+              <div class="field-row">
+                <label>Provider
+                  <select id="live-provider" name="provider">
+                    <option value="">auto-detect</option>
+                    <option value="openrouter">OpenRouter</option>
+                    <option value="groq">Groq</option>
+                  </select>
+                </label>
+                <label>API key
+                  <input id="live-key" name="api_key" type="password" autocomplete="off" placeholder="sk-or-… or gsk_…">
+                </label>
+              </div>
+            </details>
+
+            <div id="live-turnstile"></div>
+
+            <div class="live-actions">
+              <button class="btn btn-primary" type="submit" id="live-submit">Analyse stability</button>
+              <span class="live-status" id="live-status" role="status"></span>
+            </div>
+          </form>
+          <div class="live-meta" id="live-meta"></div>
+          <p class="demo-note">Free models may use your input for training. Do not paste anything sensitive.</p>
         </div>
 
-        <details class="live-byok">
-          <summary>Bring your own free key (optional)</summary>
-          <p class="subtitle">
-            The free demo is capped. To run unlimited, paste a free OpenRouter
-            (<code>sk-or-…</code>) or Groq (<code>gsk_…</code>) key. It is sent only to the
-            provider for this request and never stored.
-          </p>
-          <div class="field-row">
-            <label>Provider
-              <select id="live-provider" name="provider">
-                <option value="">auto-detect</option>
-                <option value="openrouter">OpenRouter</option>
-                <option value="groq">Groq</option>
-              </select>
-            </label>
-            <label>API key
-              <input id="live-key" name="api_key" type="password" autocomplete="off" placeholder="sk-or-… or gsk_…">
-            </label>
-          </div>
-        </details>
-
-        <div id="live-turnstile"></div>
-
-        <div class="live-actions">
-          <button class="btn btn-primary" type="submit" id="live-submit">Analyse</button>
-          <span class="live-status" id="live-status" role="status"></span>
+        <div class="demo-output-pane">
+          <div class="demo-pane-head"><span>02 · Measurement</span><span class="demo-output-tag">Entropy + attribution + counterfactual</span></div>
+          <article class="case" id="live-result" hidden aria-live="polite"></article>
         </div>
-      </form>
-
-      <div class="live-meta" id="live-meta"></div>
-
-      <article class="case" id="live-result" hidden aria-live="polite"></article>
+      </div>
 
       <p class="disclaimer">
-        Free models may use your input for training. Do not paste anything sensitive.
         Conntrail shows measurements; it recommends nothing.
       </p>
     </section>

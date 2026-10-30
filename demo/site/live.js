@@ -60,6 +60,34 @@
     el.textContent = msg || "";
   }
 
+  // Start with a real precomputed measurement so the demo is useful even when
+  // the live service is asleep or offline. A submitted analysis replaces it.
+  fetch("data/demo.json")
+    .then(function (r) { return r.json(); })
+    .then(function (bundle) {
+      var c = (bundle.use_cases || [])[0];
+      if (!c || c.detection.kind !== "routing") return;
+      var d = c.detection;
+      var a = c.analysis.before;
+      if (!$("live-message").value) $("live-message").value = d.original_input;
+      renderResult({
+        demoLabel: "Example measurement",
+        original_input: d.original_input,
+        original_route: a.route,
+        raw_contrasts: d.contrasts,
+        raw_outputs: a.variant_routes,
+        entropy_score: a.entropy_score,
+        stability: a.stability,
+        attribution_dimension: a.attribution_dimension,
+        counterfactual_route: a.counterfactual_route,
+        analysis_overhead: c.cost.analysis_overhead,
+        provider: "precomputed",
+        model: "frozen fixture",
+        cached: true
+      }, { scroll: false });
+    })
+    .catch(function () { /* live analysis still works without the fixture */ });
+
   // Show trial status.
   fetch(API + "/api/config")
     .then(function (r) { return r.json(); })
@@ -104,13 +132,13 @@
       .finally(function () { submit.disabled = false; });
   });
 
-  function renderResult(p) {
+  function renderResult(p, opts) {
     var view = $("live-result");
     view.hidden = false;
     view.innerHTML = "";
 
     var head = UI.el("div", "case-head");
-    head.appendChild(UI.el("h3", null, "Live analysis"));
+    head.appendChild(UI.el("h3", null, p.demoLabel || "Live analysis"));
     head.appendChild(UI.el("p", "case-incident", "Input: \u201C" + p.original_input + "\u201D"));
     view.appendChild(head);
 
@@ -170,7 +198,7 @@
     grid.appendChild(analysis);
 
     view.appendChild(grid);
-    if (typeof view.scrollIntoView === "function") {
+    if ((!opts || opts.scroll !== false) && typeof view.scrollIntoView === "function") {
       view.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }

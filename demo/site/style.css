@@ -1473,3 +1473,215 @@ section { margin-bottom: var(--s8); }
   background: var(--bg-raised);
   border-top: 1px solid var(--border);
 }
+
+/* --------------------------------------------------------------------------
+   21. Product-first hero + interactive homepage demo
+   -------------------------------------------------------------------------- */
+.hero-split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(2rem, 4vw, 4rem);
+  align-items: center;
+  text-align: left;
+  padding-top: var(--s7);
+}
+.hero-split .hero-copy { max-width: 36rem; }
+.hero-split h1 {
+  font-size: clamp(2.5rem, 1.75rem + 3.1vw, 4.1rem);
+  max-width: 15ch;
+  margin: 0 0 var(--s4);
+}
+.hero-split .lede { margin: 0; max-width: 52ch; }
+.hero-split .hero-cta,
+.hero-split .hero-stats { justify-content: flex-start; }
+.hero-split .trust { text-align: left; }
+.hero-visual { min-width: 0; }
+.hero-window {
+  overflow: hidden;
+  border: 1px solid var(--band-border);
+  border-radius: var(--r-xl);
+  background: var(--band-bg);
+  box-shadow: 0 28px 64px -24px rgba(14, 20, 32, 0.35);
+}
+.window-chrome {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 42px;
+  padding: 0 var(--s4);
+  background: var(--band-bg);
+  color: var(--band-muted);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+}
+.window-dots { display: inline-flex; gap: 6px; }
+.window-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--band-muted); opacity: 0.65; }
+.window-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.window-live { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; color: #86efac; }
+.window-live i { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; }
+.hero-loop { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; background: #f4f7fb; }
+.hero-readout {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s4);
+  padding: var(--s3) var(--s4);
+  background: var(--band-bg);
+  color: var(--band-muted);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+}
+.hero-readout b { color: var(--band-fg); font-weight: 600; }
+.hero-readout .badge { margin-left: auto; }
+.hero-caption { margin: var(--s3) 0 0; color: var(--faint); font-size: var(--t-sm); }
+
+.interactive-demo { scroll-margin-top: calc(var(--topbar-h) + var(--s4)); }
+.demo-shell {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.82fr) minmax(0, 1.18fr);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-lg);
+}
+.demo-pane-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  min-height: 42px;
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.demo-live-tag { color: var(--confident-ink); text-transform: none; letter-spacing: 0; }
+.demo-output-tag { color: var(--faint); text-transform: none; letter-spacing: 0; }
+.demo-input-pane { border-right: 1px solid var(--border); }
+.demo-input-pane .live-form { padding: var(--s4); margin-top: 0; }
+.demo-input-pane .live-meta { padding: 0 var(--s4); }
+.demo-output-pane { min-width: 0; background: var(--panel); }
+.demo-note { margin: var(--s4) var(--s4) 0; padding-bottom: var(--s4); color: var(--faint); font-size: var(--t-xs); }
+.demo-output-pane #live-result {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.demo-output-pane #live-result .case-head { padding: var(--s4) var(--s4) 0; }
+.demo-output-pane #live-result .case-grid { grid-template-columns: 1fr; }
+.demo-output-pane #live-result .analysis,
+.demo-output-pane #live-result .surface { background: var(--bg-raised); }
+
+@media (max-width: 1050px) {
+  .hero-split { grid-template-columns: 1fr; }
+  .hero-split .hero-copy { max-width: 46rem; }
+  .hero-split h1 { max-width: 18ch; }
+  .hero-visual { max-width: 880px; width: 100%; }
+  .demo-shell { grid-template-columns: 1fr; }
+  .demo-input-pane { border-right: 0; border-bottom: 1px solid var(--border); }
+}
+@media (max-width: 700px) {
+  .hero-split { padding-top: var(--s5); gap: var(--s6); }
+  .hero-split h1 { font-size: clamp(2.2rem, 1.7rem + 5vw, 3rem); }
+  .hero-readout .badge { margin-left: 0; }
+  .demo-output-tag { display: none; }
+  .demo-output-pane #live-result .variant-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-loop { animation: none; }
+}
+
+/* --------------------------------------------------------------------------
+   22. Visualisation & section motion polish
+   -------------------------------------------------------------------------- */
+.hero-copy .eyebrow,
+.hero-copy h1,
+.hero-copy .lede,
+.hero-copy .hero-cta,
+.hero-copy .hero-stats,
+.hero-copy .trust,
+.hero-visual,
+.section-head,
+.interactive-demo .demo-shell,
+.mini-steps .mini-step,
+.positioning .pos-card,
+.explore-grid .explore-card,
+.price-grid .price-card,
+.pricing-note,
+.contact-form,
+.contact-alt,
+.label-grid .label-card,
+.how-grid > * {
+  animation: rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.hero-copy h1 { animation-delay: 0.06s; }
+.hero-copy .lede { animation-delay: 0.12s; }
+.hero-copy .hero-cta { animation-delay: 0.18s; }
+.hero-copy .hero-stats { animation-delay: 0.24s; }
+.hero-copy .trust { animation-delay: 0.3s; }
+.hero-visual { animation-delay: 0.15s; }
+.mini-steps .mini-step:nth-child(2) { animation-delay: 0.08s; }
+.mini-steps .mini-step:nth-child(3) { animation-delay: 0.16s; }
+.positioning .pos-card:nth-child(2) { animation-delay: 0.08s; }
+.explore-grid .explore-card:nth-child(2) { animation-delay: 0.06s; }
+.explore-grid .explore-card:nth-child(3) { animation-delay: 0.12s; }
+.explore-grid .explore-card:nth-child(4) { animation-delay: 0.18s; }
+.price-grid .price-card:nth-child(2) { animation-delay: 0.08s; }
+.label-grid .label-card:nth-child(2) { animation-delay: 0.06s; }
+.label-grid .label-card:nth-child(3) { animation-delay: 0.12s; }
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hero-window .hero-readout .badge { animation: pulse-live 2.2s ease-in-out infinite; }
+@keyframes pulse-live {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--fragile) 0%, transparent); }
+  50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--fragile) 14%, transparent); }
+}
+
+.gauge-value { transition: stroke-dashoffset 0.9s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.3s ease; }
+.badge, .chip, .cat-chip { transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease; }
+.btn, .explore-card, .pos-card, .price-card, .mini-step { transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease; }
+.explore-card:hover, .mini-step:hover, .pos-card:hover, .price-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.fix-toggle button { transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease; }
+.case-picker button { transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease, transform 0.15s ease, box-shadow 0.15s ease; }
+.case-picker button:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.case-picker button.active { box-shadow: var(--shadow-sm); }
+.enter { animation: case-enter 0.35s ease; }
+@keyframes case-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-copy .eyebrow,
+  .hero-copy h1,
+  .hero-copy .lede,
+  .hero-copy .hero-cta,
+  .hero-copy .hero-stats,
+  .hero-copy .trust,
+  .hero-visual,
+  .section-head,
+  .interactive-demo .demo-shell,
+  .mini-steps .mini-step,
+  .positioning .pos-card,
+  .explore-grid .explore-card,
+  .price-grid .price-card,
+  .pricing-note,
+  .contact-form,
+  .contact-alt,
+  .label-grid .label-card,
+  .how-grid > *,
+  .enter,
+  .hero-window .hero-readout .badge {
+    animation: none;
+  }
+  .btn, .explore-card, .pos-card, .price-card, .mini-step, .badge, .chip, .cat-chip, .fix-toggle button, .case-picker button { transition: none; }
+}

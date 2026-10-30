@@ -1,0 +1,13 @@
+{
+  "duration": 12,
+  "assertions": [
+    { "kind": "appearsBy", "selector": "#hero-original-user", "bySec": 2.1 },
+    { "kind": "before", "a": "#hero-original-user", "b": "#hero-original-answer" },
+    { "kind": "before", "a": "#hero-original-answer", "b": "#hero-variant" },
+    { "kind": "before", "a": "#hero-variant", "b": "#hero-variant-answer" },
+    { "kind": "appearsBy", "selector": "#hero-status-fragile", "bySec": 8.1 },
+    { "kind": "appearsBy", "selector": "#hero-evidence", "bySec": 8.5 },
+    { "kind": "staysInFrame", "selector": "#hero-instrument" },
+    { "kind": "keepsMoving", "withinSelector": "#hero-instrument", "maxStaticSec": 2.4 }
+  ]
+}

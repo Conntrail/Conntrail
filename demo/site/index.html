@@ -36,96 +36,104 @@
   </header>
 
   <main id="main">
-    <section class="hero grid-bg">
-      <p class="eyebrow" style="justify-content: center;">Observability for AI agents</p>
-      <h1><em>Why</em> your agent decided, and how close it came to deciding otherwise.</h1>
-      <p class="lede">
-        Tracing tools record what happened. Conntrail measures how brittle the
-        decision was: would a paraphrase, a tone shift, or an inversion of the same
-        input have sent the agent down a different route? You get an entropy score,
-        the dimension that flipped it first, and the counterfactual route.
-      </p>
-      <div class="hero-cta">
-        <a class="btn btn-primary" href="use-cases.html">See it on real failures
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
-        <a class="btn" href="pricing.html">Self-host it free</a>
-      </div>
-      <div class="hero-stats">
-        <span><b>0.00 to 1.00</b> entropy score</span>
-        <span><b>3</b> contrast variants per decision</span>
-        <span>Findings recommend, never mutate</span>
+    <section class="hero hero-split grid-bg">
+      <div class="hero-copy">
+        <p class="eyebrow">Routing stability for AI agents</p>
+        <h1>See how close your agent was to <em>deciding otherwise.</em></h1>
+        <p class="lede">
+          Conntrail measures whether a paraphrase, a tone shift, or a semantic
+          inversion would have sent your agent down a different route. Get the
+          entropy score, the dimension that flipped it, and the counterfactual.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#live-demo">Run a live analysis
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a class="btn" href="pricing.html">Self-host free</a>
+        </div>
+        <div class="hero-stats">
+          <span><b>0.00–1.00</b> normalized entropy</span>
+          <span><b>3</b> perturbations per decision</span>
+          <span><b>5</b> model calls per analysis</span>
+        </div>
+        <p class="trust">Self-hosted and open source. No account required for the live demo.</p>
       </div>
 
-      <div class="specimen" role="img" aria-label="Example measurement: the support_reply node scored 0.75 entropy, labelled fragile. The neutral and opposite variants flipped the route; removing the driving dimension takes the decline path.">
-        <div class="specimen-head">
-          <span>Specimen · precomputed trace</span>
-          <span class="chip">support_reply</span>
-        </div>
-        <div class="specimen-body">
-          <div class="specimen-score">
-            <div class="gauge-wrap">
-              <svg class="gauge" viewBox="0 0 120 120" aria-hidden="true">
-                <circle class="gauge-track" cx="60" cy="60" r="52"/>
-                <line class="gauge-tick" x1="114.5" y1="60" x2="119.5" y2="60"/>
-                <line class="gauge-tick" x1="60" y1="114.5" x2="60" y2="119.5"/>
-                <line class="gauge-tick" x1="5.5" y1="60" x2="0.5" y2="60"/>
-                <line class="gauge-tick" x1="60" y1="5.5" x2="60" y2="0.5"/>
-                <line class="gauge-threshold" x1="60" y1="104" x2="60" y2="110"/>
-                <line class="gauge-threshold" x1="22.3" y1="32.4" x2="17.5" y2="28.8"/>
-                <circle class="gauge-value" cx="60" cy="60" r="52" style="stroke: var(--fragile); stroke-dashoffset: 81.7"/>
-              </svg>
-              <div class="gauge-center">
-                <span class="gauge-score">0.75</span>
-                <span class="gauge-label">entropy</span>
-              </div>
-            </div>
-            <span class="badge badge-fragile">fragile</span>
+      <div class="hero-visual" id="film">
+        <div class="hero-window">
+          <div class="window-chrome">
+            <span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="window-title">Conntrail · live measurement</span>
+            <span class="window-live"><i></i>running</span>
           </div>
-          <div class="specimen-variants">
-            <div class="specimen-variants-head">Variant routes</div>
-            <div class="specimen-variant">
-              <span class="v-name">similar</span>
-              <span class="chip">policy_answer</span>
-              <span class="res res-hold">holds</span>
-            </div>
-            <div class="specimen-variant">
-              <span class="v-name">neutral</span>
-              <span class="chip">escalate</span>
-              <span class="res res-flip">flipped</span>
-            </div>
-            <div class="specimen-variant">
-              <span class="v-name">opposite</span>
-              <span class="chip">decline</span>
-              <span class="res res-flip">flipped</span>
-            </div>
+          <video class="hero-loop" autoplay muted loop playsinline preload="metadata"
+            poster="assets/hero-loop-poster.jpg"
+            aria-label="A support message is typed and sent, its route flips under perturbation, and Conntrail scores the decision 0.75 fragile.">
+            <source src="assets/hero-loop.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          <div class="hero-readout">
+            <span><b>policy_answer</b> original route</span>
+            <span class="readout-flip"><b>escalate</b> neutral paraphrase</span>
+            <span class="badge badge-fragile">0.75 fragile</span>
           </div>
-          <p class="counterfactual specimen-cf">
-            <span class="cf-label">Counterfactual</span>
-            Remove the driving dimension and the agent takes the other path: <code>decline</code>.
-            First flip: <strong>semantic intensity</strong>.
-          </p>
         </div>
+        <p class="hero-caption">Actual analysis on the demo fixture. Not a stock animation.</p>
       </div>
-
-      <p class="trust">Every demo trace is frozen from a documented public incident pattern · <b>Cursor · Air Canada · Priceline · Zomato · OpenAI status</b></p>
     </section>
 
-    <section class="film-section" id="film">
+    <section class="interactive-demo" id="live-demo">
       <div class="section-head">
-        <p class="eyebrow">30-second explainer</p>
-        <h2>Watch a decision flip.</h2>
-        <p>One support message. One paraphrase. One number that says how close it came to taking the other path.</p>
+        <p class="eyebrow">Try it yourself</p>
+        <h2>One message in. A stability score out.</h2>
+        <p>Conntrail generates three perturbations, re-runs the router on all four inputs, and measures the spread. This is the real SDK, not a replay.</p>
       </div>
-      <figure class="film-frame">
-        <video class="film-video" controls playsinline preload="metadata"
-          poster="assets/conntrail-explainer-poster.jpg"
-          width="1920" height="1080">
-          <source src="assets/conntrail-explainer.mp4" type="video/mp4">
-          Your browser does not support the video tag.
-        </video>
-        <figcaption>Real Conntrail analysis on the demo fixture. The messages are typed and sent, not staged.</figcaption>
-      </figure>
+
+      <div class="demo-shell">
+        <div class="demo-input-pane">
+          <div class="demo-pane-head"><span>01 · Input</span><span class="demo-live-tag">Live · free models</span></div>
+          <form id="live-form" class="live-form" novalidate>
+            <label for="live-message">Customer-support message</label>
+            <textarea id="live-message" name="message" rows="4" maxlength="600"
+              placeholder="e.g. This is the third time I've asked. I want my money back now, or I'm calling my lawyer."></textarea>
+
+            <div class="live-examples" id="live-examples">
+              <span class="live-examples-label">Try an example:</span>
+            </div>
+
+            <details class="live-byok">
+              <summary>Bring your own free key (optional)</summary>
+              <p class="subtitle">Used for this request only, never stored.</p>
+              <div class="field-row">
+                <label>Provider
+                  <select id="live-provider" name="provider">
+                    <option value="">auto-detect</option>
+                    <option value="openrouter">OpenRouter</option>
+                    <option value="groq">Groq</option>
+                  </select>
+                </label>
+                <label>API key
+                  <input id="live-key" name="api_key" type="password" autocomplete="off" placeholder="sk-or-… or gsk_…">
+                </label>
+              </div>
+            </details>
+
+            <div id="live-turnstile"></div>
+
+            <div class="live-actions">
+              <button class="btn btn-primary" type="submit" id="live-submit">Analyse stability</button>
+              <span class="live-status" id="live-status" role="status"></span>
+            </div>
+          </form>
+          <div class="live-meta" id="live-meta"></div>
+          <p class="demo-note">Free models may train on input. Do not paste sensitive data.</p>
+        </div>
+
+        <div class="demo-output-pane">
+          <div class="demo-pane-head"><span>02 · Measurement</span><span class="demo-output-tag">Entropy + attribution + counterfactual</span></div>
+          <article class="case" id="live-result" hidden aria-live="polite"></article>
+        </div>
+      </div>
     </section>
 
     <section class="band">
@@ -271,6 +279,8 @@
     <p class="footer-fine">Conntrail · Self-hosted, open source · Managed enterprise in progress</p>
   </footer>
 
+  <script src="config.js"></script>
   <script src="app.js"></script>
+  <script src="live.js"></script>
 </body>
 </html>
