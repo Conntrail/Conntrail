@@ -1,0 +1,7 @@
+node_modules
+.wrangler
+functions
+dev_server.py
+wrangler.toml
+README.md
+.assetsignore

@@ -1,0 +1,170 @@
+<template>
+  <style>
+    #root {
+      position: absolute; inset: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #10151d; background: #f4f7fb; overflow: hidden;
+    }
+    .clip { position: absolute; inset: 0; }
+    .stage { position: absolute; inset: 0; }
+    .grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(16,21,29,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16,21,29,.05) 1px, transparent 1px);
+      background-size: 28px 28px;
+      -webkit-mask-image: radial-gradient(ellipse at 50% 40%, #000 0%, transparent 78%);
+      mask-image: radial-gradient(ellipse at 50% 40%, #000 0%, transparent 78%);
+    }
+    .head { position: absolute; left: 104px; top: 112px; width: 1500px; }
+    .eyebrow {
+      font-family: "JetBrains Mono", monospace; font-size: 16px; letter-spacing: .14em;
+      color: #1d4ed8; text-transform: uppercase; margin-bottom: 16px;
+    }
+    .headline { font-size: 64px; line-height: 1.05; font-weight: 900; letter-spacing: -.02em; }
+    .headline span { display: block; }
+    .verdict {
+      position: absolute; right: 104px; top: 118px; display: flex; align-items: center; gap: 12px;
+      font-family: "JetBrains Mono", monospace; font-size: 28px; color: #b91c1c;
+      background: #fdebeb; border: 1px solid #f3c4c4; border-radius: 999px; padding: 8px 16px;
+    }
+    .verdict i { width: 9px; height: 9px; border-radius: 50%; background: #dc2626; }
+
+    .baseline {
+      position: absolute; left: 104px; top: 300px; width: 1712px;
+      display: flex; align-items: center; gap: 20px;
+      padding: 14px 0; border-top: 1px solid #dfe6f0; border-bottom: 1px solid #dfe6f0;
+    }
+    .blabel { font-family: "JetBrains Mono", monospace; font-size: 14px; letter-spacing: .12em; text-transform: uppercase; color: #646c7a; width: 180px; }
+    .btext { font-size: 28px; color: #10151d; }
+    .bchip { margin-left: auto; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: "JetBrains Mono", monospace; font-size: 28px; font-weight: 500;
+      padding: 4px 13px; border-radius: 999px; border: 1px solid #bfe6cc;
+      background: #e8f6ec; color: #166534; white-space: nowrap;
+    }
+    .chip i { width: 7px; height: 7px; border-radius: 50%; background: #15803d; }
+    .chip.amber { border-color: #f0d3b4; background: #fcf1e1; color: #92400e; }
+    .chip.amber i { background: #b45309; }
+    .chip.red { border-color: #f3c4c4; background: #fdebeb; color: #b91c1c; }
+    .chip.red i { background: #dc2626; }
+
+    .spectrum {
+      position: absolute; left: 104px; top: 392px; width: 1712px;
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+    }
+    .col { padding: 26px 34px 30px; border-left: 1px solid #dfe6f0; }
+    .col:first-child { border-left: none; padding-left: 0; }
+    .col:last-child { padding-right: 0; }
+    .col.first { position: relative; }
+    .vlabel { font-family: "JetBrains Mono", monospace; font-size: 14px; letter-spacing: .12em; text-transform: uppercase; color: #646c7a; margin-bottom: 14px; }
+    .vtext { font-size: 28px; line-height: 1.42; color: #10151d; min-height: 150px; }
+    .vroute { margin-top: 20px; display: flex; align-items: center; gap: 12px; }
+    .flipmark { font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: .1em; color: #b45309; }
+    .col.first .flipmark { color: #b91c1c; }
+    .highlight {
+      position: absolute; left: -1px; top: -10px; bottom: -10px; width: 3px; background: #dc2626;
+      transform-origin: top; border-radius: 2px;
+    }
+
+    .attrib {
+      position: absolute; left: 104px; top: 792px; width: 1712px;
+      display: flex; gap: 18px;
+    }
+    .attrib-box {
+      flex: 1; border: 1px solid #dfe6f0; background: #fff; border-radius: 12px;
+      padding: 20px 24px; display: flex; flex-direction: column; gap: 8px;
+      position: relative;
+    }
+    .attrib-box .k { font-family: "JetBrains Mono", monospace; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: #646c7a; }
+    .attrib-box .v { font-size: 30px; font-weight: 600; }
+    .attrib-box .v.red { color: #b91c1c; }
+    .attrib-box .v.amber { color: #92400e; }
+    .underline {
+      position: absolute; left: 24px; bottom: 14px; width: 190px; height: 3px;
+      background: #1d4ed8; transform-origin: left center; border-radius: 2px;
+    }
+  </style>
+
+  <div data-hf-id="hf-s4mz" id="root" data-composition-id="proof" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-bo0e" id="scene-proof" class="clip" data-start="0" data-duration="6" data-track-index="0">
+      <div data-hf-id="hf-80b5" class="grid" data-layout-ignore></div>
+      <div data-hf-id="hf-tan6" class="stage">
+        <div data-hf-id="hf-z992" class="head">
+          <div data-hf-id="hf-k6s4" class="eyebrow" id="p-eye" data-layout-ignore>The attribution</div>
+          <h1 data-hf-id="hf-5ru5" class="headline" id="p-headline">
+            <span data-hf-id="hf-pzba">One dimension flipped it.</span>
+          </h1>
+        </div>
+        <div data-hf-id="hf-wp7x" class="verdict" id="p-verdict"><i data-hf-id="hf-wt6k"></i>0.75 fragile</div>
+
+        <div data-hf-id="hf-eq7f" class="baseline" id="p-baseline">
+          <span data-hf-id="hf-yv3z" class="blabel" data-layout-ignore>original</span>
+          <span data-hf-id="hf-50xh" class="btext">“I booked a non-refundable kayak tour but my plans changed.”</span>
+          <span data-hf-id="hf-w0gn" class="bchip"><span data-hf-id="hf-xf78" class="chip"><i data-hf-id="hf-zeb8"></i>policy_answer</span></span>
+        </div>
+
+        <div data-hf-id="hf-net1" class="spectrum">
+          <div data-hf-id="hf-fy6d" class="col" id="p-col-similar">
+            <div data-hf-id="hf-p20y" class="vlabel" data-layout-ignore>similar</div>
+            <div data-hf-id="hf-cudh" class="vtext">“My non-refundable kayak tour no longer works for me. Is a refund possible?”</div>
+            <div data-hf-id="hf-8igx" class="vroute"><span data-hf-id="hf-3h3g" class="chip"><i data-hf-id="hf-y7e5"></i>policy_answer</span></div>
+          </div>
+          <div data-hf-id="hf-rvmn" class="col" id="p-col-neutral">
+            <div data-hf-id="hf-bm3w" class="vlabel" data-layout-ignore>neutral</div>
+            <div data-hf-id="hf-hmqe" class="vtext">“A non-refundable kayak tour was booked. The customer's plans changed.”</div>
+            <div data-hf-id="hf-ojh1" class="vroute"><span data-hf-id="hf-dmz6" class="chip amber"><i data-hf-id="hf-ylp6"></i>escalate</span><span data-hf-id="hf-4osm" class="flipmark" data-layout-ignore>FLIPPED</span></div>
+          </div>
+          <div data-hf-id="hf-r2vn" class="col first" id="p-col-opposite">
+            <div data-hf-id="hf-adws" class="vlabel" data-layout-ignore>opposite</div>
+            <div data-hf-id="hf-wi4k" class="vtext">“I'm happy to keep my non-refundable kayak tour booking exactly as it is.”</div>
+            <div data-hf-id="hf-pqe4" class="vroute"><span data-hf-id="hf-akfc" class="chip red"><i data-hf-id="hf-0l8b"></i>decline</span><span data-hf-id="hf-5elb" class="flipmark" data-layout-ignore>FIRST FLIP</span></div>
+            <div data-hf-id="hf-2hop" class="highlight" id="p-highlight"></div>
+          </div>
+        </div>
+
+        <div data-hf-id="hf-8ol0" class="attrib">
+          <div data-hf-id="hf-rtak" class="attrib-box" id="p-attr-1">
+            <span data-hf-id="hf-sjrk" class="k" data-layout-ignore>First flip</span>
+            <span data-hf-id="hf-99jh" class="v red">semantic intensity</span>
+          </div>
+          <div data-hf-id="hf-0h6f" class="attrib-box" id="p-attr-2">
+            <span data-hf-id="hf-wwo5" class="k" data-layout-ignore>Counterfactual</span>
+            <span data-hf-id="hf-8d6l" class="v amber">remove it → decline</span>
+            <div data-hf-id="hf-im1j" class="underline" id="p-under"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#p-eye",
+      { opacity: 0, y: 10 },
+      { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, 0.0);
+    tl.fromTo("#p-headline span",
+      { opacity: 0, filter: "blur(7px)", y: 10 },
+      { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.55, ease: "expo.out" }, 0.15);
+    tl.fromTo("#p-verdict",
+      { opacity: 0, scale: 0.85 },
+      { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.5)" }, 0.5);
+    tl.fromTo("#p-baseline",
+      { opacity: 0, y: 18 },
+      { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 0.7);
+    tl.fromTo("#p-col-similar, #p-col-neutral, #p-col-opposite",
+      { opacity: 0, y: 22 },
+      { opacity: 1, y: 0, duration: 0.5, ease: "expo.out", stagger: 0.14 }, 1.1);
+    tl.fromTo("#p-highlight",
+      { scaleY: 0, opacity: 0 },
+      { scaleY: 1, opacity: 1, duration: 0.45, ease: "power3.out" }, 2.3);
+    tl.fromTo("#p-attr-1, #p-attr-2",
+      { opacity: 0, y: 18 },
+      { opacity: 1, y: 0, duration: 0.5, ease: "expo.out", stagger: 0.12 }, 2.8);
+    tl.fromTo("#p-under",
+      { scaleX: 0 },
+      { scaleX: 1, duration: 0.5, ease: "power3.out" }, 4.3);
+    window.__timelines["proof"] = tl;
+  </script>
+</template>

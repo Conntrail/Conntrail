@@ -1,0 +1,164 @@
+<template>
+  <style>
+    #root {
+      position: absolute; inset: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #10151d; background: #f4f7fb; overflow: hidden;
+    }
+    .clip { position: absolute; inset: 0; }
+    .stage { position: absolute; inset: 0; }
+    .grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(16,21,29,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16,21,29,.05) 1px, transparent 1px);
+      background-size: 28px 28px;
+      -webkit-mask-image: radial-gradient(ellipse at 32% 44%, #000 0%, transparent 74%);
+      mask-image: radial-gradient(ellipse at 32% 44%, #000 0%, transparent 74%);
+    }
+    .card {
+      position: absolute; left: 104px; top: 110px; width: 900px; height: 860px;
+      background: #fff; border: 1px solid #dfe6f0; border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(16,24,40,.10); overflow: hidden;
+    }
+    .card-head {
+      display: flex; align-items: center; gap: 12px;
+      padding: 20px 26px; border-bottom: 1px solid #e8eef6;
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; background: #1d4ed8; }
+    .head-title { font-size: 28px; font-weight: 600; }
+    .head-sub { margin-left: auto; font-family: "JetBrains Mono", monospace; font-size: 15px; color: #646c7a; }
+    .chat { padding: 24px 34px; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+    .row { display: flex; }
+    .row.user { justify-content: flex-end; }
+    .bubble {
+      max-width: 84%; padding: 14px 18px; border-radius: 14px;
+      font-size: 28px; line-height: 1.38;
+    }
+    .bubble.user { background: #edf2fe; border: 1px solid #cfdbfa; border-bottom-right-radius: 4px; }
+    .bubble.bot { background: #f6f8fc; border: 1px solid #e1e8f2; border-bottom-left-radius: 4px; }
+    .bot-meta { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: "JetBrains Mono", monospace; font-size: 28px; font-weight: 500;
+      padding: 4px 12px; border-radius: 999px; border: 1px solid #bfe6cc;
+      background: #e8f6ec; color: #166534;
+    }
+    .chip i { width: 7px; height: 7px; border-radius: 50%; background: #15803d; }
+    .bot-tag { font-family: "JetBrains Mono", monospace; font-size: 13px; color: #646c7a; }
+    .typing { align-self: flex-start; background: #f6f8fc; border: 1px solid #e1e8f2; border-radius: 14px; border-bottom-left-radius: 4px; padding: 14px 20px; display: flex; gap: 8px; }
+    .typing i { width: 9px; height: 9px; border-radius: 50%; background: #9aa4b2; display: block; }
+    .input {
+      position: absolute; left: 34px; right: 34px; bottom: 24px; height: 56px;
+      border: 1px solid #dfe6f0; border-radius: 10px; background: #fbfcfe;
+      display: flex; align-items: center; padding: 0 16px 0 20px;
+      font-size: 28px; color: #10151d;
+    }
+    .input .placeholder { color: #646c7a; }
+    .input .send {
+      margin-left: auto; width: 36px; height: 36px; border-radius: 8px;
+      background: #1d4ed8; color: #fff; display: grid; place-items: center; font-size: 17px;
+    }
+    .copy { position: absolute; left: 1072px; top: 236px; width: 760px; }
+    .eyebrow {
+      font-family: "JetBrains Mono", monospace; font-size: 16px; letter-spacing: .14em;
+      color: #1d4ed8; text-transform: uppercase; margin-bottom: 22px;
+    }
+    .headline { font-size: 70px; line-height: 1.06; font-weight: 900; letter-spacing: -.02em; }
+    .headline span { display: block; }
+    .note { margin-top: 30px; font-size: 28px; line-height: 1.5; color: #556070; max-width: 640px; }
+    .uline { width: 260px; height: 4px; background: #1d4ed8; border-radius: 2px; margin-top: 22px; transform-origin: left center; }
+  </style>
+
+  <div id="root" data-composition-id="hook" data-width="1920" data-height="1080">
+    <div id="scene-hook" class="clip" data-start="0" data-duration="8" data-track-index="0">
+      <div class="grid" data-layout-ignore></div>
+      <div class="stage">
+        <div class="card" id="hook-card">
+          <div class="card-head">
+            <span class="dot"></span>
+            <span class="head-title" id="hook-title">Website support chat</span>
+            <span class="head-sub" data-layout-ignore>NorthPeak Outdoors</span>
+          </div>
+          <div class="chat" id="hook-chat">
+            <div class="row user" id="h-user1">
+              <div class="bubble user">I booked a non-refundable kayak tour but my plans changed. Can I get my money back?</div>
+            </div>
+            <div class="row" id="h-bot">
+              <div class="bubble bot">
+                Absolutely. Although it was listed as non-refundable, you're eligible for a full refund within 10 working days.
+                <div class="bot-meta">
+                  <span class="chip" id="h-chip"><i></i>policy_answer</span>
+                  <span class="bot-tag" data-layout-ignore>bot · no policy lookup</span>
+                </div>
+              </div>
+            </div>
+            <div class="typing" id="h-typing" data-layout-ignore><i class="h-dot"></i><i class="h-dot"></i><i class="h-dot"></i></div>
+            <div class="row user" id="h-spam1"><div class="bubble user">Are you sure?</div></div>
+            <div class="row user" id="h-spam2"><div class="bubble user">The booking says non-refundable.</div></div>
+            <div class="row user" id="h-spam3"><div class="bubble user">I need this fixed now.</div></div>
+          </div>
+          <div class="input">
+            <span class="placeholder" id="hook-input">Message support…</span>
+            <span class="send" id="hook-send">↑</span>
+          </div>
+        </div>
+
+        <div class="copy">
+          <div class="eyebrow" id="hook-eyebrow" data-layout-ignore>Support chatbot</div>
+          <h1 class="headline" id="hook-headline">
+            <span>The bot answered</span>
+            <span>with confidence.</span>
+          </h1>
+          <p class="note" id="hook-note">
+            It invented an exception that does not exist.
+          </p>
+          <div class="uline" id="hook-uline"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const inputText = document.getElementById("hook-input");
+    const firstMessage = "I booked a non-refundable kayak tour but my plans changed. Can I get my money back?";
+
+    tl.fromTo("#hook-card", { y: 30 }, { y: 0, duration: 0.5, ease: "expo.out" }, 0);
+    tl.fromTo("#hook-eyebrow", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, 0.3);
+    tl.fromTo("#hook-headline span",
+      { y: 10 },
+      { y: 0, duration: 0.45, ease: "expo.out", stagger: 0.1 }, 0);
+
+    // Typing the first message, then sending it.
+    const typer = { n: 0 };
+    tl.to(typer, {
+      n: firstMessage.length, duration: 1.15, ease: "none",
+      onUpdate: function () { inputText.textContent = firstMessage.slice(0, Math.round(typer.n)); }
+    }, 0.35);
+    tl.to("#hook-send", { scale: 0.84, duration: 0.08, yoyo: true, repeat: 1, ease: "power1.inOut" }, 1.5);
+    tl.call(function () { inputText.textContent = "Message support…"; inputText.classList.add("placeholder"); }, null, 1.56);
+    tl.fromTo("#h-user1",
+      { opacity: 0, x: 70, scale: 0.98 },
+      { opacity: 1, x: 0, scale: 1, duration: 0.3, ease: "power2.out" }, 1.6);
+
+    // Bot typing, then the fabricated answer.
+    tl.fromTo("#h-typing", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.2, ease: "power2.out" }, 2.05);
+    tl.fromTo(".h-dot", { y: 0 }, { y: -4, duration: 0.16, yoyo: true, repeat: 1, stagger: 0.07, ease: "power1.inOut" }, 2.1);
+    tl.to("#h-typing", { opacity: 0, duration: 0.15, ease: "power1.in" }, 2.55);
+    tl.fromTo("#h-bot", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, 2.6);
+    tl.fromTo("#h-chip", { y: 6 }, { y: 0, duration: 0.3, ease: "power2.out" }, 3.0);
+
+    // Frustration: three quick messages.
+    tl.to("#hook-send", { scale: 0.84, duration: 0.07, yoyo: true, repeat: 1, ease: "power1.inOut" }, 3.55);
+    tl.fromTo("#h-spam1", { opacity: 0, x: 60, scale: 0.98 }, { opacity: 1, x: 0, scale: 1, duration: 0.24, ease: "power2.out" }, 3.62);
+    tl.to("#hook-send", { scale: 0.84, duration: 0.07, yoyo: true, repeat: 1, ease: "power1.inOut" }, 3.95);
+    tl.fromTo("#h-spam2", { opacity: 0, x: 60, scale: 0.98 }, { opacity: 1, x: 0, scale: 1, duration: 0.24, ease: "power2.out" }, 4.02);
+    tl.to("#hook-send", { scale: 0.84, duration: 0.07, yoyo: true, repeat: 1, ease: "power1.inOut" }, 4.35);
+    tl.fromTo("#h-spam3", { opacity: 0, x: 60, scale: 0.98 }, { opacity: 1, x: 0, scale: 1, duration: 0.24, ease: "power2.out" }, 4.42);
+
+    tl.fromTo("#hook-note", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" }, 4.4);
+    tl.fromTo("#hook-uline", { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: "power3.out" }, 6.0);
+    window.__timelines["hook"] = tl;
+  </script>
+</template>

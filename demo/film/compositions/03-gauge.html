@@ -1,0 +1,139 @@
+<template>
+  <style>
+    #root {
+      position: absolute; inset: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #10151d; background: #f4f7fb; overflow: hidden;
+    }
+    .clip { position: absolute; inset: 0; }
+    .stage { position: absolute; inset: 0; }
+    .grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(16,21,29,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16,21,29,.05) 1px, transparent 1px);
+      background-size: 28px 28px;
+      -webkit-mask-image: radial-gradient(ellipse at 56% 46%, #000 0%, transparent 76%);
+      mask-image: radial-gradient(ellipse at 56% 46%, #000 0%, transparent 76%);
+    }
+    .copy { position: absolute; left: 104px; top: 176px; width: 800px; }
+    .eyebrow {
+      font-family: "JetBrains Mono", monospace; font-size: 16px; letter-spacing: .14em;
+      color: #1d4ed8; text-transform: uppercase; margin-bottom: 20px;
+    }
+    .headline { font-size: 68px; line-height: 1.06; font-weight: 900; letter-spacing: -.02em; }
+    .headline span { display: block; }
+    .sub { margin-top: 28px; font-size: 28px; line-height: 1.5; color: #556070; max-width: 660px; }
+    .specimen {
+      margin-top: 44px; border-left: 3px solid #cfdbfa; padding: 4px 0 4px 22px;
+      font-size: 28px; line-height: 1.5; color: #556070; max-width: 700px;
+    }
+    .specimen b {
+      display: block; font-family: "JetBrains Mono", monospace; font-size: 13px;
+      letter-spacing: .1em; text-transform: uppercase; color: #646c7a; margin-bottom: 8px;
+    }
+    .gaugewrap { position: absolute; left: 1044px; top: 150px; width: 700px; height: 760px; }
+    .gauge { position: absolute; left: 40px; top: 30px; width: 620px; height: 620px; }
+    .gauge .track { fill: none; stroke: #e1e8f2; stroke-width: 18; }
+    .gauge .arc { fill: none; stroke: #dc2626; stroke-width: 18; stroke-linecap: round; }
+    .gauge .tick { stroke: #b9c4d3; stroke-width: 3; }
+    .gauge .threshold { stroke: #b45309; stroke-width: 3; opacity: .55; }
+    .gnum {
+      position: absolute; left: 40px; top: 258px; width: 620px; text-align: center;
+      font-family: "JetBrains Mono", monospace; font-size: 118px; font-weight: 500;
+      letter-spacing: -.03em; color: #10151d;
+    }
+    .glabel {
+      position: absolute; left: 40px; top: 392px; width: 620px; text-align: center;
+      font-family: "JetBrains Mono", monospace; font-size: 15px; letter-spacing: .16em;
+      text-transform: uppercase; color: #646c7a;
+    }
+    .badge {
+      position: absolute; left: 0; right: 0; top: 566px; margin: 0 auto; width: max-content;
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 8px 18px; border-radius: 999px; border: 1px solid #f3c4c4;
+      background: #fdebeb; color: #b91c1c;
+      font-family: "JetBrains Mono", monospace; font-size: 28px; font-weight: 500;
+    }
+    .badge i { width: 9px; height: 9px; border-radius: 50%; background: #dc2626; }
+    .scale {
+      position: absolute; left: 40px; top: 636px; width: 620px; display: flex;
+      justify-content: space-between; font-family: "JetBrains Mono", monospace;
+      font-size: 13px; color: #646c7a;
+    }
+  </style>
+
+  <div data-hf-id="hf-f7dm" id="root" data-composition-id="gauge" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-jsn4" id="scene-gauge" class="clip" data-start="0" data-duration="5" data-track-index="0">
+      <div data-hf-id="hf-80b5" class="grid" data-layout-ignore></div>
+      <div data-hf-id="hf-tan6" class="stage">
+        <div data-hf-id="hf-bdx3" class="copy">
+          <div data-hf-id="hf-9ke4" class="eyebrow" id="g-eye" data-layout-ignore>The measurement</div>
+          <h1 data-hf-id="hf-n8uw" class="headline" id="g-headline">
+            <span data-hf-id="hf-7ewm">Conntrail measures</span>
+            <span data-hf-id="hf-rdxf">the distance between them.</span>
+          </h1>
+          <p data-hf-id="hf-i3mg" class="sub" id="g-sub">
+            Four inputs. One number for how far the route moved.
+          </p>
+          <div data-hf-id="hf-4gzo" class="specimen" id="g-specimen">
+            <b data-hf-id="hf-9gte" data-layout-ignore>Original input</b>
+            “I booked a non-refundable kayak tour.”
+          </div>
+        </div>
+
+        <div data-hf-id="hf-ukun" class="gaugewrap" id="g-wrap">
+          <svg data-hf-id="hf-qdwe" class="gauge" viewBox="0 0 500 500" aria-hidden="true">
+            <circle data-hf-id="hf-bdlu" class="track" cx="250" cy="250" r="200"></circle>
+            <circle data-hf-id="hf-fj90" id="g-arc" class="arc" cx="250" cy="250" r="200"
+              transform="rotate(-90 250 250)"
+              stroke-dasharray="1256.6" stroke-dashoffset="1256.6"></circle>
+            <line data-hf-id="hf-jr00" class="tick" x1="250" y1="38" x2="250" y2="56"></line>
+            <line data-hf-id="hf-7rl8" class="tick" x1="462" y1="250" x2="444" y2="250"></line>
+            <line data-hf-id="hf-ltn0" class="tick" x1="250" y1="462" x2="250" y2="444"></line>
+            <line data-hf-id="hf-fy66" class="tick" x1="38" y1="250" x2="56" y2="250"></line>
+            <line data-hf-id="hf-bhyk" class="threshold" x1="463" y1="250" x2="443" y2="250"></line>
+            <line data-hf-id="hf-caku" class="threshold" x1="407" y1="407" x2="393" y2="393"></line>
+          </svg>
+          <div data-hf-id="hf-ab5z" class="gnum" id="g-num">0.00</div>
+          <div data-hf-id="hf-uwsd" class="glabel" data-layout-ignore>normalised entropy</div>
+          <div data-hf-id="hf-3mzo" class="badge" id="g-badge"><i data-hf-id="hf-wt6k"></i>fragile</div>
+          <div data-hf-id="hf-iu4r" class="scale" data-layout-ignore><span data-hf-id="hf-mgar">0.0 never flips</span><span data-hf-id="hf-7qdk">1.0 maximally unstable</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#g-eye",
+      { opacity: 0, y: 10 },
+      { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, 0.05);
+    tl.fromTo("#g-headline span",
+      { opacity: 0, filter: "blur(7px)", y: 10 },
+      { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.55, ease: "expo.out", stagger: 0.12 }, 0.2);
+    tl.fromTo("#g-sub",
+      { opacity: 0 },
+      { opacity: 1, duration: 0.5, ease: "power2.out" }, 0.9);
+    tl.fromTo("#g-specimen",
+      { opacity: 0, x: -14 },
+      { opacity: 1, x: 0, duration: 0.5, ease: "expo.out" }, 0.6);
+    tl.fromTo("#g-wrap",
+      { scale: 0.97 },
+      { scale: 1, duration: 0.5, ease: "expo.out" }, 0);
+    tl.fromTo("#g-arc",
+      { attr: { "stroke-dashoffset": 1256.6 } },
+      { attr: { "stroke-dashoffset": 314.16 }, duration: 1.25, ease: "power2.inOut" }, 0.2);
+    const gaugeCounter = { v: 0 };
+    tl.to(gaugeCounter, {
+      v: 0.75, duration: 1.25, ease: "power2.out",
+      onUpdate: function () {
+        document.getElementById("g-num").textContent = gaugeCounter.v.toFixed(2);
+      }
+    }, 0.2);
+    tl.fromTo("#g-badge",
+      { opacity: 0, scale: 0.8 },
+      { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.5)" }, 1.85);
+    window.__timelines["gauge"] = tl;
+  </script>
+</template>

@@ -1452,3 +1452,24 @@ section { margin-bottom: var(--s8); }
 .live-status.err { color: var(--fragile); }
 .live-meta { color: var(--muted); font-size: var(--t-sm); font-family: var(--font-mono); margin-top: var(--s3); }
 #live-result { margin-top: var(--s5); }
+
+/* --------------------------------------------------------------------------
+   20. Explainer film
+   -------------------------------------------------------------------------- */
+.film-section { margin-top: var(--s7); }
+.film-frame {
+  margin: var(--s5) 0 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--band-bg);
+  box-shadow: var(--shadow-md);
+}
+.film-video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: var(--band-bg); }
+.film-frame figcaption {
+  padding: var(--s3) var(--s4);
+  font-size: var(--t-sm);
+  color: var(--muted);
+  background: var(--bg-raised);
+  border-top: 1px solid var(--border);
+}

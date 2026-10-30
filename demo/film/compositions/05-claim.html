@@ -1,0 +1,111 @@
+<template>
+  <style>
+    #root {
+      position: absolute; inset: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #10151d; background: #f4f7fb; overflow: hidden;
+    }
+    .clip { position: absolute; inset: 0; }
+    .stage { position: absolute; inset: 0; }
+    .grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(16,21,29,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16,21,29,.05) 1px, transparent 1px);
+      background-size: 28px 28px;
+      -webkit-mask-image: radial-gradient(ellipse at 50% 48%, #000 0%, transparent 72%);
+      mask-image: radial-gradient(ellipse at 50% 48%, #000 0%, transparent 72%);
+    }
+    .claim {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center; padding: 0 140px;
+    }
+    .eyebrow {
+      font-family: "JetBrains Mono", monospace; font-size: 16px; letter-spacing: .18em;
+      color: #1d4ed8; text-transform: uppercase; margin-bottom: 26px;
+    }
+    .claim h1 { font-size: 76px; line-height: 1.08; font-weight: 900; letter-spacing: -.025em; }
+    .claim h1 span { display: block; }
+
+    .end {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+    }
+    .mark { width: 128px; height: 128px; margin-bottom: 30px; }
+    .wordmark { font-size: 62px; font-weight: 900; letter-spacing: -.02em; }
+    .url {
+      margin-top: 18px; font-family: "JetBrains Mono", monospace; font-size: 28px;
+      color: #556070; letter-spacing: .01em;
+    }
+    .cta {
+      margin-top: 30px; display: inline-flex; align-items: center; gap: 12px;
+      background: #1d4ed8; color: #fff; border-radius: 999px;
+      padding: 16px 30px; font-size: 28px; font-weight: 600;
+    }
+    .cta span { font-family: "JetBrains Mono", monospace; font-size: 24px; opacity: .85; }
+  </style>
+
+  <div data-hf-id="hf-dc55" id="root" data-composition-id="claim" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-w4vm" id="scene-claim" class="clip" data-start="0" data-duration="6" data-track-index="0">
+      <div data-hf-id="hf-80b5" class="grid" data-layout-ignore></div>
+      <div data-hf-id="hf-tan6" class="stage">
+        <div data-hf-id="hf-a62u" class="claim" id="c-claim">
+          <div data-hf-id="hf-p2i5" class="eyebrow" id="c-eye" data-layout-ignore>Conntrail</div>
+          <h1 data-hf-id="hf-uzy1" id="c-line">
+            <span data-hf-id="hf-j7w1">You can see how close it was</span>
+            <span data-hf-id="hf-lyfp">to deciding otherwise.</span>
+          </h1>
+        </div>
+
+        <div data-hf-id="hf-ybh0" class="end" id="c-end">
+          <svg data-hf-id="hf-lvzc" class="mark" viewBox="0 0 120 120" aria-hidden="true">
+            <circle data-hf-id="hf-oilg" cx="22" cy="60" r="9" fill="#1d4ed8"></circle>
+            <line data-hf-id="hf-hl3t" id="c-l1" x1="31" y1="60" x2="84" y2="30" stroke="#b9c4d3" stroke-width="4" stroke-linecap="round"></line>
+            <line data-hf-id="hf-gvjz" id="c-l2" x1="31" y1="60" x2="84" y2="60" stroke="#b9c4d3" stroke-width="4" stroke-linecap="round"></line>
+            <line data-hf-id="hf-dca1" id="c-l3" x1="31" y1="60" x2="84" y2="90" stroke="#b9c4d3" stroke-width="4" stroke-linecap="round"></line>
+            <circle data-hf-id="hf-xgnh" id="c-d1" cx="92" cy="30" r="8" fill="#15803d"></circle>
+            <circle data-hf-id="hf-wvuz" id="c-d2" cx="92" cy="60" r="8" fill="#b45309"></circle>
+            <circle data-hf-id="hf-62kd" id="c-d3" cx="92" cy="90" r="8" fill="#dc2626"></circle>
+          </svg>
+          <div data-hf-id="hf-i7id" class="wordmark" id="c-word">Conntrail</div>
+          <div data-hf-id="hf-vhdw" class="url" id="c-url">conntrail.ibzie.dev</div>
+          <div data-hf-id="hf-y565" class="cta" id="c-cta">Try the live demo <span data-hf-id="hf-p70p">→</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#c-eye",
+      { opacity: 0, y: 10 },
+      { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, 0.0);
+    tl.fromTo("#c-line span",
+      { opacity: 0, filter: "blur(8px)", y: 12 },
+      { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.6, ease: "expo.out", stagger: 0.14 }, 0.15);
+
+    tl.fromTo("#c-claim",
+      { opacity: 1, filter: "blur(0px)" },
+      { opacity: 0, filter: "blur(10px)", duration: 0.4, ease: "power3.in" }, 2.5);
+
+    tl.fromTo("#c-end",
+      { opacity: 0 },
+      { opacity: 1, duration: 0.4, ease: "power2.out" }, 2.75);
+    tl.fromTo("#c-l1, #c-l2, #c-l3",
+      { scaleX: 0 },
+      { scaleX: 1, transformOrigin: "left center", duration: 0.4, ease: "power3.out", stagger: 0.07 }, 2.95);
+    tl.fromTo("#c-d1, #c-d2, #c-d3",
+      { scale: 0, transformOrigin: "center" },
+      { scale: 1, duration: 0.35, ease: "back.out(1.6)", stagger: 0.07 }, 3.2);
+    tl.fromTo("#c-word",
+      { opacity: 0, filter: "blur(8px)", y: 10 },
+      { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.45, ease: "expo.out" }, 3.35);
+    tl.fromTo("#c-url",
+      { opacity: 0 },
+      { opacity: 1, duration: 0.35, ease: "power2.out" }, 3.6);
+    tl.fromTo("#c-cta",
+      { opacity: 0, y: 14, scale: 0.97 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "back.out(1.3)" }, 3.75);
+    window.__timelines["claim"] = tl;
+  </script>
+</template>

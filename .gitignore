@@ -226,3 +226,7 @@ Epics.md
 # Cloudflare Pages local dev (wrangler)
 demo/site/node_modules/
 demo/site/.wrangler/
+
+# HyperFrames local preview/render state (source is committed; artifacts are not)
+demo/film/.hyperframes/
+demo/film/.thumbnails/
