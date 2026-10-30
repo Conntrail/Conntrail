@@ -1477,25 +1477,22 @@ section { margin-bottom: var(--s8); }
 /* --------------------------------------------------------------------------
    21. Product-first hero + interactive homepage demo
    -------------------------------------------------------------------------- */
-.hero-split {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: clamp(2rem, 4vw, 4rem);
-  align-items: center;
-  text-align: left;
-  padding-top: var(--s7);
+.hero-stacked { text-align: center; padding-top: var(--s7); }
+.hero-stacked .hero-copy { margin: 0 auto; max-width: 46rem; }
+.hero-stacked h1 {
+  font-size: clamp(2.4rem, 1.7rem + 3.4vw, 4rem);
+  max-width: 18ch;
+  margin: 0 auto var(--s4);
 }
-.hero-split .hero-copy { max-width: 36rem; }
-.hero-split h1 {
-  font-size: clamp(2.5rem, 1.75rem + 3.1vw, 4.1rem);
-  max-width: 15ch;
-  margin: 0 0 var(--s4);
+.hero-stacked .lede { margin: 0 auto; max-width: 54ch; }
+.hero-stacked .hero-cta,
+.hero-stacked .hero-stats { justify-content: center; }
+.hero-stacked .trust { text-align: center; }
+.hero-visual {
+  width: 100%;
+  max-width: 1120px;
+  margin: var(--s6) auto 0;
 }
-.hero-split .lede { margin: 0; max-width: 52ch; }
-.hero-split .hero-cta,
-.hero-split .hero-stats { justify-content: flex-start; }
-.hero-split .trust { text-align: left; }
-.hero-visual { min-width: 0; }
 .hero-window {
   overflow: hidden;
   border: 1px solid var(--band-border);
@@ -1507,7 +1504,7 @@ section { margin-bottom: var(--s8); }
   display: flex;
   align-items: center;
   gap: var(--s3);
-  min-height: 42px;
+  min-height: 44px;
   padding: 0 var(--s4);
   background: var(--band-bg);
   color: var(--band-muted);
@@ -1529,7 +1526,7 @@ section { margin-bottom: var(--s8); }
   background: var(--band-bg);
   color: var(--band-muted);
   font-family: var(--font-mono);
-  font-size: var(--t-xs);
+  font-size: var(--t-sm);
 }
 .hero-readout b { color: var(--band-fg); font-weight: 600; }
 .hero-readout .badge { margin-left: auto; }
@@ -1579,16 +1576,16 @@ section { margin-bottom: var(--s8); }
 .demo-output-pane #live-result .surface { background: var(--bg-raised); }
 
 @media (max-width: 1050px) {
-  .hero-split { grid-template-columns: 1fr; }
-  .hero-split .hero-copy { max-width: 46rem; }
-  .hero-split h1 { max-width: 18ch; }
+  .hero-split, .hero-stacked { grid-template-columns: 1fr; }
+  .hero-split .hero-copy, .hero-stacked .hero-copy { max-width: 46rem; }
+  .hero-split h1, .hero-stacked h1 { max-width: 18ch; }
   .hero-visual { max-width: 880px; width: 100%; }
   .demo-shell { grid-template-columns: 1fr; }
   .demo-input-pane { border-right: 0; border-bottom: 1px solid var(--border); }
 }
 @media (max-width: 700px) {
-  .hero-split { padding-top: var(--s5); gap: var(--s6); }
-  .hero-split h1 { font-size: clamp(2.2rem, 1.7rem + 5vw, 3rem); }
+  .hero-split, .hero-stacked { padding-top: var(--s5); gap: var(--s6); }
+  .hero-split h1, .hero-stacked h1 { font-size: clamp(2.2rem, 1.7rem + 5vw, 3rem); }
   .hero-readout .badge { margin-left: 0; }
   .demo-output-tag { display: none; }
   .demo-output-pane #live-result .variant-grid { grid-template-columns: 1fr; }
