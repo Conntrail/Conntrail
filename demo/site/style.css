@@ -1575,6 +1575,64 @@ section { margin-bottom: var(--s8); }
 .demo-output-pane #live-result .analysis,
 .demo-output-pane #live-result .surface { background: var(--bg-raised); }
 
+/* --------------------------------------------------------------------------
+   22. Compare page
+   -------------------------------------------------------------------------- */
+.compare-frame {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-md);
+}
+.compare-table { width: 100%; border-collapse: collapse; min-width: 760px; }
+.compare-table th, .compare-table td {
+  text-align: left;
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--t-sm);
+  vertical-align: top;
+}
+.compare-table thead th {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border-strong);
+}
+.compare-table tbody tr:last-child td, .compare-table tbody tr:last-child th { border-bottom: 0; }
+.compare-table th[scope="row"] { font-weight: 600; color: var(--fg); }
+.compare-table td.is-us {
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.compare-table th.is-us { color: var(--accent-ink); }
+.c-yes { color: var(--confident-ink); font-weight: 650; }
+.c-no { color: var(--faint); }
+.c-partial { color: var(--boundary-ink); font-weight: 650; }
+
+.compare-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); }
+.compare-card {
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--s4) var(--s4) var(--s5);
+  background: var(--bg-raised);
+}
+.compare-card h3 { margin: 0 0 var(--s2); font-size: var(--t-lg); }
+.compare-card p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+.compare-card .compare-when {
+  margin-top: var(--s3);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--border);
+  color: var(--fg);
+}
+.compare-card .compare-when strong { color: var(--accent-ink); }
+
+@media (max-width: 900px) {
+  .compare-grid { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 1050px) {
   .hero-split, .hero-stacked { grid-template-columns: 1fr; }
   .hero-split .hero-copy, .hero-stacked .hero-copy { max-width: 46rem; }
